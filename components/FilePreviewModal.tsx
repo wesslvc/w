@@ -1,7 +1,10 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
+
+const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 interface Props {
   file: DriveFile;
@@ -12,8 +15,11 @@ function getFileId(webViewLink: string): string | null {
   return webViewLink.match(/\/d\/([^/?]+)/)?.[1] ?? null;
 }
 
-const PREVIEWABLE = [
-  "application/pdf",
+// Types that can use PDF.js self-hosted viewer (via our proxy)
+const PDF_TYPES = ["application/pdf"];
+
+// Types rendered via Google Drive iframe (no size issue for these)
+const IFRAME_TYPES = [
   "application/vnd.google-apps.document",
   "application/vnd.google-apps.spreadsheet",
   "application/vnd.google-apps.presentation",
@@ -58,20 +64,26 @@ function HighlightedSnippet({ text, query }: { text: string; query: string }) {
 }
 
 export default function FilePreviewModal({ file, onClose }: Props) {
-  const [loading, setLoading] = useState(true);
+  const [iframeLoading, setIframeLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchIdx, setMatchIdx] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const fileId = getFileId(file.webViewLink);
-  const canPreview = PREVIEWABLE.includes(file.mimeType) && !!fileId;
-  const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
+  const isPdf = PDF_TYPES.includes(file.mimeType);
+  const isIframeType = IFRAME_TYPES.includes(file.mimeType);
+  const canPreview = (isPdf || isIframeType) && !!fileId;
+
+  // PDF.js uses our proxy to avoid CORS & size limits
+  const pdfProxyUrl = fileId ? `/api/file/${fileId}` : null;
+  const iframePreviewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
   const downloadUrl = fileId
     ? `https://drive.google.com/uc?export=download&id=${fileId}`
     : file.webViewLink;
   const hasFullText = !!file.fullText;
 
+  // fullText search (for files with extracted text)
   const matchPositions = useMemo(() => {
     if (!searchQuery.trim() || !file.fullText) return [];
     const lower = file.fullText.toLowerCase();
@@ -122,7 +134,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
       ? getSnippet(file.fullText, matchPositions[matchIdx], searchQuery)
       : null;
 
-  const searchBar = (
+  // Search bar for fullText-indexed files (shown in non-PDF path)
+  const fullTextSearchBar = (
     <div className="flex items-center gap-2">
       <div className="relative flex-1 max-w-sm">
         <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -165,17 +178,6 @@ export default function FilePreviewModal({ file, onClose }: Props) {
     </div>
   );
 
-  const ctrlFHint = (
-    <p className="text-xs text-gray-400 dark:text-gray-500">
-      <svg className="inline w-3.5 h-3.5 mr-1 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-      미리보기 클릭 후{" "}
-      <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+F</kbd>{" "}
-      로 문서 내 검색
-    </p>
-  );
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -184,15 +186,13 @@ export default function FilePreviewModal({ file, onClose }: Props) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative w-full sm:max-w-4xl sm:max-h-[90vh] max-h-[95vh] flex flex-col bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
+        className="relative w-full sm:max-w-5xl sm:max-h-[92vh] max-h-[95vh] flex flex-col bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-start gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
           <div className="flex-1 min-w-0">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
-              {file.name}
-            </h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{file.name}</h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
               {file.folderPath || "루트"} &middot; {getMimeLabel(file.mimeType)} &middot;{" "}
               {formatFileSize(file.size)}
@@ -200,8 +200,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Mobile search toggle — only visible on mobile when canPreview & hasFullText */}
-            {canPreview && hasFullText && (
+            {/* Mobile search toggle (only for non-PDF iframe previews with fullText) */}
+            {canPreview && !isPdf && hasFullText && (
               <button
                 onClick={() => setMobileSearchOpen((v) => !v)}
                 aria-label="문서 내 검색"
@@ -223,6 +223,7 @@ export default function FilePreviewModal({ file, onClose }: Props) {
                 onClick={handlePrint}
                 aria-label="인쇄"
                 className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 transition-colors"
+                title="인쇄"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
@@ -264,21 +265,38 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
         </div>
 
-        {/* Mobile search panel — shown only when toggled */}
-        {canPreview && mobileSearchOpen && (
-          <div className="sm:hidden px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
-            {searchBar}
-          </div>
+        {/* Search bar — only for non-PDF iframe previews with fullText */}
+        {canPreview && !isPdf && (
+          <>
+            {/* Mobile toggle panel */}
+            {mobileSearchOpen && (
+              <div className="sm:hidden px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
+                {hasFullText ? fullTextSearchBar : (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    미리보기 클릭 후{" "}
+                    <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+F</kbd>{" "}
+                    로 검색
+                  </p>
+                )}
+              </div>
+            )}
+            {/* Desktop always-visible strip */}
+            <div className="hidden sm:block px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
+              {hasFullText ? fullTextSearchBar : (
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  <svg className="inline w-3.5 h-3.5 mr-1 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  미리보기 클릭 후{" "}
+                  <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+F</kbd>{" "}
+                  로 문서 내 검색
+                </p>
+              )}
+            </div>
+          </>
         )}
 
-        {/* Desktop search bar — always visible when canPreview */}
-        {canPreview && (
-          <div className="hidden sm:block px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
-            {hasFullText ? searchBar : ctrlFHint}
-          </div>
-        )}
-
-        {/* Snippet result */}
+        {/* fullText snippet result */}
         {currentSnippet && (
           <div className="px-5 py-2.5 bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800 flex-shrink-0">
             <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
@@ -288,29 +306,9 @@ export default function FilePreviewModal({ file, onClose }: Props) {
         )}
 
         {/* Preview area */}
-        <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-950 min-h-0">
-          {canPreview ? (
-            <div className="relative w-full h-full min-h-[55vh]">
-              {loading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600">
-                  <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="text-sm">파일을 불러오는 중…</span>
-                  <span className="text-xs">대용량 파일은 시간이 걸릴 수 있습니다</span>
-                </div>
-              )}
-              <iframe
-                src={previewUrl!}
-                className="w-full h-full min-h-[55vh]"
-                onLoad={() => setLoading(false)}
-                allow="autoplay"
-                title={file.name}
-              />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 gap-4 text-gray-400 dark:text-gray-600">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {!canPreview ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-4 text-gray-400 dark:text-gray-600 h-full">
               <span className="text-6xl">📦</span>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 이 형식은 미리보기를 지원하지 않습니다
@@ -323,6 +321,31 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               >
                 파일 다운로드
               </a>
+            </div>
+          ) : isPdf && pdfProxyUrl ? (
+            /* PDF → self-hosted PDF.js viewer */
+            <div className="h-full min-h-[60vh]">
+              <PdfViewer url={pdfProxyUrl} />
+            </div>
+          ) : (
+            /* Google Workspace / images → Drive iframe */
+            <div className="relative w-full h-full min-h-[60vh]">
+              {iframeLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600">
+                  <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm">불러오는 중…</span>
+                </div>
+              )}
+              <iframe
+                src={iframePreviewUrl!}
+                className="w-full h-full min-h-[60vh]"
+                onLoad={() => setIframeLoading(false)}
+                allow="autoplay"
+                title={file.name}
+              />
             </div>
           )}
         </div>
