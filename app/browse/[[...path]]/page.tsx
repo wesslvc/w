@@ -1,6 +1,6 @@
 import Link from "next/link";
 import FileCard from "@/components/FileCard";
-import { loadIndex } from "@/lib/data";
+import { getCachedIndex } from "@/lib/fetchIndex";
 import { isAfter, subDays, parseISO } from "date-fns";
 
 interface BrowsePageProps {
@@ -11,7 +11,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const params = await searchParams;
   const currentPath = params.path ?? "";
 
-  const index = loadIndex();
+  const index = await getCachedIndex();
   const twoWeeksAgo = subDays(new Date(), 14);
 
   // Files directly under currentPath (root: folderPath === "")
@@ -24,10 +24,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     new Set(
       index.files
         .filter((f) => {
-          if (!currentPath) {
-            // Top-level: any file with a non-empty folderPath
-            return f.folderPath !== "";
-          }
+          if (!currentPath) return f.folderPath !== "";
           return (
             f.folderPath.startsWith(currentPath + "/") &&
             !f.folderPath.slice(currentPath.length + 1).includes("/")
@@ -41,9 +38,9 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
     )
   ).sort();
 
-  // Top-level folders for the root view
+  // Top-level folders for the sidebar
   const topFolders = Array.from(
-    new Set(index.files.map((f) => f.folderPath.split("/")[0]))
+    new Set(index.files.map((f) => f.folderPath.split("/")[0]).filter(Boolean))
   ).sort();
 
   const breadcrumbs = currentPath
@@ -91,7 +88,11 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
                 <li key={folder}>
                   <Link
                     href={`/browse?path=${encodeURIComponent(folder)}`}
-                    className={`block px-2 py-1.5 pl-5 rounded hover:bg-gray-50 truncate ${currentPath === folder || currentPath.startsWith(folder + "/") ? "text-blue-600 font-medium" : "text-gray-600"}`}
+                    className={`block px-2 py-1.5 pl-5 rounded hover:bg-gray-50 truncate ${
+                      currentPath === folder || currentPath.startsWith(folder + "/")
+                        ? "text-blue-600 font-medium"
+                        : "text-gray-600"
+                    }`}
                   >
                     📁 {folder}
                   </Link>
@@ -103,12 +104,12 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          {/* Subfolders */}
+          {/* Top-level folder grid */}
           {!currentPath && topFolders.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {topFolders.map((folder) => {
-                const count = index.files.filter((f) =>
-                  f.folderPath === folder || f.folderPath.startsWith(folder + "/")
+                const count = index.files.filter(
+                  (f) => f.folderPath === folder || f.folderPath.startsWith(folder + "/")
                 ).length;
                 return (
                   <Link
@@ -127,12 +128,13 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             </div>
           )}
 
+          {/* Sub-folder grid */}
           {currentPath && subFolders.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {subFolders.map((sub) => {
-                const fullPath = currentPath ? `${currentPath}/${sub}` : sub;
-                const count = index.files.filter((f) =>
-                  f.folderPath.startsWith(fullPath)
+                const fullPath = `${currentPath}/${sub}`;
+                const count = index.files.filter(
+                  (f) => f.folderPath === fullPath || f.folderPath.startsWith(fullPath + "/")
                 ).length;
                 return (
                   <Link

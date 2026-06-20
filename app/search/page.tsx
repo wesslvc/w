@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import SearchBar from "@/components/SearchBar";
 import FileCard from "@/components/FileCard";
-import { loadIndex } from "@/lib/data";
+import { getCachedIndex } from "@/lib/fetchIndex";
 import { searchFiles } from "@/lib/search";
 import { isAfter, subDays, parseISO } from "date-fns";
 
@@ -16,19 +16,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const typeFilter = params.type;
   const folderFilter = params.folder;
 
-  const index = loadIndex();
+  const index = await getCachedIndex();
   const twoWeeksAgo = subDays(new Date(), 14);
 
   const results = query
-    ? searchFiles(index.files, {
-        query,
-        mode,
-        mimeTypeFilter: typeFilter,
-        folderFilter,
-      })
+    ? searchFiles(index.files, { query, mode, mimeTypeFilter: typeFilter, folderFilter })
     : [];
 
-  // Unique mime types for filter
   const allTypes = Array.from(new Set(index.files.map((f) => f.mimeType)));
 
   return (
@@ -107,11 +101,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     const isNew = isAfter(parseISO(file.modifiedTime), twoWeeksAgo);
                     return (
                       <li key={file.id}>
-                        <FileCard
-                          file={file}
-                          snippet={snippet}
-                          isNew={isNew}
-                        />
+                        <FileCard file={file} snippet={snippet} isNew={isNew} />
                       </li>
                     );
                   })}

@@ -1,0 +1,63 @@
+import { unstable_cache } from "next/cache";
+import { listFilesRecursive } from "./drive";
+import { loadIndex, loadUpdates } from "./data";
+import type { DriveIndex, DriveFile, UpdateHistory } from "./types";
+
+async function fetchDriveIndex(): Promise<DriveIndex> {
+  const apiKey = process.env.GOOGLE_API_KEY;
+  const folderId = process.env.DRIVE_FOLDER_ID;
+
+  if (!apiKey || !folderId) {
+    return loadIndex();
+  }
+
+  const now = new Date().toISOString();
+  const rawFiles = await listFilesRecursive(folderId, apiKey);
+
+  const files: DriveFile[] = rawFiles.map(({ file, folderPath }) => ({
+    id: file.id,
+    name: file.name,
+    mimeType: file.mimeType,
+    folderId: file.parents?.[0] ?? "",
+    folderPath,
+    createdTime: file.createdTime ?? now,
+    modifiedTime: file.modifiedTime ?? now,
+    size: file.size ? parseInt(file.size) : undefined,
+    webViewLink: file.webViewLink ?? "",
+    thumbnailLink: file.thumbnailLink,
+  }));
+
+  return { syncedAt: now, totalFiles: files.length, files };
+}
+
+// Cache refreshes every 60 seconds — no external DB needed
+export const getCachedIndex = unstable_cache(fetchDriveIndex, ["drive-index"], {
+  revalidate: 60,
+});
+
+// Updates feed: derived from createdTime (newest files first, no separate log needed)
+export function deriveUpdates(index: DriveIndex): UpdateHistory {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30); // show last 30 days
+
+  const recent = index.files
+    .filter((f) => new Date(f.createdTime) >= cutoff)
+    .sort((a, b) => b.createdTime.localeCompare(a.createdTime))
+    .slice(0, 100);
+
+  return {
+    lastCheckedAt: index.syncedAt,
+    updates: recent.map((f) => ({
+      id: f.id,
+      fileId: f.id,
+      fileName: f.name,
+      folderPath: f.folderPath,
+      type: "new" as const,
+      detectedAt: f.createdTime,
+      webViewLink: f.webViewLink,
+    })),
+  };
+}
+
+// Keep loadUpdates as fallback for local dev without env vars
+export { loadUpdates };

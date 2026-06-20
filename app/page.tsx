@@ -2,13 +2,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import SearchBar from "@/components/SearchBar";
 import UpdateFeed from "@/components/UpdateFeed";
-import { loadIndex, loadUpdates } from "@/lib/data";
+import { getCachedIndex, deriveUpdates } from "@/lib/fetchIndex";
 
-export default function HomePage() {
-  const index = loadIndex();
-  const history = loadUpdates();
+export default async function HomePage() {
+  const index = await getCachedIndex();
+  const history = deriveUpdates(index);
 
-  // Collect unique top-level folder names (exclude root-level files with empty path)
   const topFolders = Array.from(
     new Set(
       index.files
@@ -26,7 +25,7 @@ export default function HomePage() {
           구글드라이브 아카이브에서 문서를 빠르게 찾아보세요.
           <br />
           <span className="text-sm">
-            총 <strong>{index.totalFiles}</strong>개 파일 인덱싱됨 &middot; 마지막 동기화:{" "}
+            총 <strong>{index.totalFiles}</strong>개 파일 &middot; 마지막 동기화:{" "}
             {index.syncedAt
               ? new Date(index.syncedAt).toLocaleString("ko-KR", {
                   year: "numeric",
@@ -49,11 +48,8 @@ export default function HomePage() {
         {/* Recent Updates */}
         <section className="md:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-gray-800">최근 업데이트</h2>
-            <Link
-              href="/updates"
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <h2 className="font-semibold text-gray-800">최근 업로드</h2>
+            <Link href="/updates" className="text-sm text-blue-600 hover:underline">
               전체 보기 →
             </Link>
           </div>
@@ -64,17 +60,14 @@ export default function HomePage() {
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">폴더 바로가기</h2>
-            <Link
-              href="/browse"
-              className="text-sm text-blue-600 hover:underline"
-            >
+            <Link href="/browse" className="text-sm text-blue-600 hover:underline">
               전체 보기 →
             </Link>
           </div>
           <ul className="space-y-1.5">
             {topFolders.map((folder) => {
-              const count = index.files.filter((f) =>
-                f.folderPath === folder || f.folderPath.startsWith(folder + "/")
+              const count = index.files.filter(
+                (f) => f.folderPath === folder || f.folderPath.startsWith(folder + "/")
               ).length;
               return (
                 <li key={folder}>
