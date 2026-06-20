@@ -5,7 +5,7 @@ export type SortKey = "name-asc" | "name-desc" | "date-desc" | "date-asc" | "siz
 
 const OPTIONS: { value: SortKey; label: string }[] = [
   { value: "name-asc",   label: "이름순 (가나다)" },
-  { value: "name-desc",  label: "이름순 (하나가)" },
+  { value: "name-desc",  label: "이름 역순" },
   { value: "date-desc",  label: "최신순" },
   { value: "date-asc",   label: "오래된순" },
   { value: "size-desc",  label: "크기 큰순" },

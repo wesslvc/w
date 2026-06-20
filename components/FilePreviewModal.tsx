@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
 
@@ -26,16 +26,70 @@ const PREVIEWABLE = [
   "image/webp",
 ];
 
+function getSnippet(text: string, index: number, query: string, radius = 80): string {
+  const start = Math.max(0, index - radius);
+  const end = Math.min(text.length, index + query.length + radius);
+  return (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : "");
+}
+
+function HighlightedSnippet({ text, query }: { text: string; query: string }) {
+  const lq = query.toLowerCase();
+  const idx = text.toLowerCase().indexOf(lq);
+  if (idx === -1) return <span>{text}</span>;
+  return (
+    <span>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-300 dark:bg-yellow-600 text-gray-900 dark:text-gray-100 rounded px-0.5">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </span>
+  );
+}
+
 export default function FilePreviewModal({ file, onClose }: Props) {
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [matchIdx, setMatchIdx] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
   const fileId = getFileId(file.webViewLink);
   const canPreview = PREVIEWABLE.includes(file.mimeType) && !!fileId;
   const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
-  const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : file.webViewLink;
+  const downloadUrl = fileId
+    ? `https://drive.google.com/uc?export=download&id=${fileId}`
+    : file.webViewLink;
 
-  // Close on Escape
+  const hasFullText = !!file.fullText;
+
+  const matchPositions = useMemo(() => {
+    if (!searchQuery.trim() || !file.fullText) return [];
+    const lower = file.fullText.toLowerCase();
+    const q = searchQuery.toLowerCase();
+    const results: number[] = [];
+    let i = 0;
+    while ((i = lower.indexOf(q, i)) !== -1) {
+      results.push(i);
+      i += q.length;
+    }
+    return results;
+  }, [searchQuery, file.fullText]);
+
+  // Reset match index when query changes
+  useEffect(() => { setMatchIdx(0); }, [searchQuery]);
+
+  // Close on Escape (but not when typing in search)
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (document.activeElement === searchInputRef.current) {
+          setSearchQuery("");
+          searchInputRef.current?.blur();
+        } else {
+          onClose();
+        }
+      }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
@@ -45,6 +99,11 @@ export default function FilePreviewModal({ file, onClose }: Props) {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
+
+  const currentSnippet =
+    matchPositions.length > 0 && file.fullText
+      ? getSnippet(file.fullText, matchPositions[matchIdx], searchQuery)
+      : null;
 
   return (
     <div
@@ -66,7 +125,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               {file.name}
             </h2>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5 truncate">
-              {file.folderPath || "루트"} &middot; {getMimeLabel(file.mimeType)} &middot; {formatFileSize(file.size)}
+              {file.folderPath || "루트"} &middot; {getMimeLabel(file.mimeType)} &middot;{" "}
+              {formatFileSize(file.size)}
             </p>
           </div>
 
@@ -104,10 +164,76 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
         </div>
 
+        {/* Search bar */}
+        {canPreview && (
+          <div className="px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
+            {hasFullText ? (
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 max-w-sm">
+                  <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
+                  </svg>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="문서 내 검색…"
+                    className="w-full pl-8 pr-3 py-1.5 text-sm bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-blue-400 dark:focus:border-blue-500 text-gray-800 dark:text-gray-200 placeholder-gray-400"
+                  />
+                </div>
+                {searchQuery && (
+                  <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                    {matchPositions.length > 0
+                      ? `${matchIdx + 1} / ${matchPositions.length}개`
+                      : "결과 없음"}
+                  </span>
+                )}
+                {matchPositions.length > 1 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setMatchIdx((i) => (i - 1 + matchPositions.length) % matchPositions.length)}
+                      className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => setMatchIdx((i) => (i + 1) % matchPositions.length)}
+                      className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                <svg className="inline w-3.5 h-3.5 mr-1 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                미리보기 클릭 후 <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+F</kbd> 로 문서 내 검색
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Snippet result */}
+        {currentSnippet && (
+          <div className="px-5 py-2.5 bg-yellow-50 dark:bg-yellow-950/30 border-b border-yellow-200 dark:border-yellow-800 flex-shrink-0">
+            <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">
+              <HighlightedSnippet text={currentSnippet} query={searchQuery} />
+            </p>
+          </div>
+        )}
+
         {/* Preview area */}
         <div className="flex-1 overflow-hidden bg-gray-100 dark:bg-gray-950 min-h-0">
           {canPreview ? (
-            <div className="relative w-full h-full min-h-[60vh]">
+            <div className="relative w-full h-full min-h-[55vh]">
               {loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600">
                   <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -120,7 +246,7 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               )}
               <iframe
                 src={previewUrl!}
-                className="w-full h-full min-h-[60vh]"
+                className="w-full h-full min-h-[55vh]"
                 onLoad={() => setLoading(false)}
                 allow="autoplay"
                 title={file.name}
