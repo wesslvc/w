@@ -2,12 +2,12 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
 
-// Lazy-load pdfjs to avoid SSR issues
 let pdfLibCache: typeof import("pdfjs-dist") | null = null;
 async function loadPdfLib() {
   if (pdfLibCache) return pdfLibCache;
   const lib = await import("pdfjs-dist");
-  lib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${lib.version}/build/pdf.worker.min.mjs`;
+  // Serve worker locally — avoids CDN failures and CORS issues
+  lib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
   pdfLibCache = lib;
   return lib;
 }
@@ -22,7 +22,6 @@ interface Props {
 }
 
 export default function PdfViewer({ url }: Props) {
-  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [scale, setScale] = useState(1.4);
@@ -30,14 +29,13 @@ export default function PdfViewer({ url }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pageInput, setPageInput] = useState("1");
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [pendingQuery, setPendingQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [matches, setMatches] = useState<SearchMatch[]>([]);
   const [matchIdx, setMatchIdx] = useState(0);
   const [searching, setSearching] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const textLayerRef = useRef<HTMLDivElement>(null);
   const pdfRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
 
@@ -46,28 +44,26 @@ export default function PdfViewer({ url }: Props) {
     let cancelled = false;
     setLoading(true);
     setError(null);
-    setPdf(null);
     pdfRef.current = null;
 
     loadPdfLib()
-      .then((lib) => {
-        const task = lib.getDocument({
+      .then((lib) =>
+        lib.getDocument({
           url,
-          cMapUrl: `https://unpkg.com/pdfjs-dist@${lib.version}/cmaps/`,
+          cMapUrl: "/cmaps/",
           cMapPacked: true,
-        });
-        return task.promise;
-      })
+        }).promise
+      )
       .then((doc) => {
-        if (cancelled) { (doc as unknown as { destroy(): void }).destroy?.(); return; }
+        if (cancelled) return;
         pdfRef.current = doc;
-        setPdf(doc);
         setNumPages(doc.numPages);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
-        setError("PDF를 불러올 수 없습니다. 파일 접근 권한을 확인하세요.");
+        console.error("[PdfViewer] load error:", err);
+        setError(`PDF 로드 실패: ${err?.message ?? String(err)}`);
         setLoading(false);
       });
 
@@ -75,60 +71,46 @@ export default function PdfViewer({ url }: Props) {
   }, [url]);
 
   // Render page
-  const renderPage = useCallback(
-    async (pageNum: number, pageScale: number) => {
-      const doc = pdfRef.current;
-      if (!doc || !canvasRef.current) return;
+  const renderPage = useCallback(async (pageNum: number, pageScale: number) => {
+    const doc = pdfRef.current;
+    if (!doc || !canvasRef.current) return;
 
-      if (renderTaskRef.current) {
-        try { renderTaskRef.current.cancel(); } catch {}
-        renderTaskRef.current = null;
-      }
+    if (renderTaskRef.current) {
+      try { renderTaskRef.current.cancel(); } catch {}
+      renderTaskRef.current = null;
+    }
 
-      let page: PDFPageProxy;
-      try {
-        page = await doc.getPage(pageNum);
-      } catch { return; }
+    let page: PDFPageProxy;
+    try { page = await doc.getPage(pageNum); }
+    catch { return; }
 
-      const viewport = page.getViewport({ scale: pageScale });
-      const canvas = canvasRef.current;
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+    const viewport = page.getViewport({ scale: pageScale });
+    const canvas = canvasRef.current;
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
 
-      const task = page.render({ canvas, viewport });
-      renderTaskRef.current = task;
-
-      try {
-        await task.promise;
-      } catch (e: unknown) {
-        if ((e as { name?: string })?.name === "RenderingCancelledException") return;
-      }
-
-      // Text layer for selection
-      const lib = pdfLibCache;
-      if (lib && textLayerRef.current) {
-        const container = textLayerRef.current;
-        container.innerHTML = "";
-        container.style.width = `${viewport.width}px`;
-        container.style.height = `${viewport.height}px`;
-        try {
-          const textContent = await page.getTextContent();
-          const tl = new lib.TextLayer({ textContentSource: textContent, container, viewport });
-          await tl.render();
-        } catch {}
-      }
-    },
-    []
-  );
+    const task = page.render({ canvas, viewport });
+    renderTaskRef.current = task;
+    try { await task.promise; }
+    catch (e: unknown) {
+      if ((e as { name?: string })?.name === "RenderingCancelledException") return;
+      console.error("[PdfViewer] render error:", e);
+    }
+  }, []);
 
   useEffect(() => {
-    if (pdf) {
+    if (!loading && !error) {
       renderPage(currentPage, scale);
       setPageInput(String(currentPage));
     }
-  }, [pdf, currentPage, scale, renderPage]);
+  }, [loading, error, currentPage, scale, renderPage]);
 
-  // Search through all pages
+  // Navigate to match page when matchIdx changes
+  useEffect(() => {
+    if (matches.length > 0) setCurrentPage(matches[matchIdx].page);
+  }, [matchIdx, matches]);
+
+  // Text search through all pages
   const handleSearch = useCallback(async () => {
     const doc = pdfRef.current;
     const q = pendingQuery.trim();
@@ -143,7 +125,9 @@ export default function PdfViewer({ url }: Props) {
       try {
         const page = await doc.getPage(i);
         const content = await page.getTextContent();
-        const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
+        const text = content.items
+          .map((item) => ("str" in item ? item.str : ""))
+          .join(" ");
         if (text.toLowerCase().includes(lower)) {
           const idx = text.toLowerCase().indexOf(lower);
           const start = Math.max(0, idx - 50);
@@ -151,7 +135,9 @@ export default function PdfViewer({ url }: Props) {
           found.push({
             page: i,
             snippet:
-              (start > 0 ? "…" : "") + text.slice(start, end) + (end < text.length ? "…" : ""),
+              (start > 0 ? "…" : "") +
+              text.slice(start, end) +
+              (end < text.length ? "…" : ""),
           });
         }
       } catch {}
@@ -163,21 +149,15 @@ export default function PdfViewer({ url }: Props) {
     setSearching(false);
   }, [pendingQuery]);
 
-  // Navigate to match page
-  useEffect(() => {
-    if (matches.length > 0) setCurrentPage(matches[matchIdx].page);
-  }, [matchIdx, matches]);
-
   function goTo(page: number) {
-    const p = Math.max(1, Math.min(numPages, page));
-    setCurrentPage(p);
+    setCurrentPage(Math.max(1, Math.min(numPages, page)));
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-gray-800 text-white">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-white flex-shrink-0 flex-wrap gap-y-2">
-        {/* Page nav */}
+      <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 flex-shrink-0 flex-wrap gap-y-1.5">
+        {/* Page navigation */}
         <div className="flex items-center gap-1">
           <button
             onClick={() => goTo(currentPage - 1)}
@@ -195,8 +175,6 @@ export default function PdfViewer({ url }: Props) {
             onKeyDown={(e) => { if (e.key === "Enter") goTo(parseInt(pageInput) || 1); }}
             onBlur={() => goTo(parseInt(pageInput) || 1)}
             className="w-10 text-center text-xs bg-gray-700 rounded px-1 py-1 outline-none focus:ring-1 ring-blue-500"
-            min={1}
-            max={numPages}
           />
           <span className="text-xs text-gray-400">/ {numPages}</span>
           <button
@@ -286,15 +264,17 @@ export default function PdfViewer({ url }: Props) {
       {/* Match snippet */}
       {matches.length > 0 && matches[matchIdx] && (
         <div className="px-4 py-1.5 bg-yellow-900/40 border-b border-yellow-700/30 text-xs text-yellow-200 flex-shrink-0 truncate">
-          <span className="text-yellow-400 font-medium mr-1.5">p.{matches[matchIdx].page}</span>
+          <span className="text-yellow-400 font-medium mr-1.5">
+            p.{matches[matchIdx].page}
+          </span>
           {matches[matchIdx].snippet}
         </div>
       )}
 
-      {/* Canvas */}
+      {/* Canvas area */}
       <div className="flex-1 overflow-auto bg-gray-700 flex items-start justify-center p-4">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-gray-400">
             <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -303,42 +283,19 @@ export default function PdfViewer({ url }: Props) {
             <span className="text-xs text-gray-500">대용량 파일은 잠시 기다려주세요</span>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-red-400">
-            <svg className="w-10 h-10 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
+            <svg className="w-10 h-10 text-red-400 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
-            <p className="text-sm">{error}</p>
+            <p className="text-sm text-red-300 text-center max-w-xs">{error}</p>
+            <p className="text-xs text-gray-500 text-center max-w-xs">
+              파일이 공개 공유되어 있는지, Vercel에 GOOGLE_API_KEY 환경변수가 설정됐는지 확인하세요.
+            </p>
           </div>
         ) : (
-          <div className="relative shadow-2xl">
-            <canvas ref={canvasRef} className="block" />
-            <div
-              ref={textLayerRef}
-              className="pdf-text-layer"
-            />
-          </div>
+          <canvas ref={canvasRef} className="block shadow-2xl" />
         )}
       </div>
-
-      <style>{`
-        .pdf-text-layer {
-          position: absolute;
-          top: 0; left: 0;
-          overflow: hidden;
-          line-height: 1;
-          pointer-events: none;
-        }
-        .pdf-text-layer span {
-          color: transparent;
-          position: absolute;
-          white-space: pre;
-          cursor: text;
-          transform-origin: 0% 0%;
-        }
-        .pdf-text-layer ::selection {
-          background: rgba(0, 100, 255, 0.3);
-        }
-      `}</style>
     </div>
   );
 }
