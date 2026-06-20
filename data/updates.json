@@ -1,6 +1,501 @@
 {
-  "lastCheckedAt": "2026-06-20T12:51:00.553Z",
+  "lastCheckedAt": "2026-06-20T19:26:18.623Z",
   "updates": [
+    {
+      "id": "upd_1781983578623_1NfEM8ksEK8hp3WqvMkQDkNUBBAWT5eDH",
+      "fileId": "1NfEM8ksEK8hp3WqvMkQDkNUBBAWT5eDH",
+      "fileName": "19500101-20251031 서울일평균 기온데이터.csv",
+      "folderPath": "",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1NfEM8ksEK8hp3WqvMkQDkNUBBAWT5eDH/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1Kz0wrSO_HgB6IWJBBB86Dh-v22jgs7tJ",
+      "fileId": "1Kz0wrSO_HgB6IWJBBB86Dh-v22jgs7tJ",
+      "fileName": "[27이감] 3-3 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1Kz0wrSO_HgB6IWJBBB86Dh-v22jgs7tJ/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1x2DwAECj_QquDUoBCGfS4VUKa4vHQ27i",
+      "fileId": "1x2DwAECj_QquDUoBCGfS4VUKa4vHQ27i",
+      "fileName": "[27이감] 3-3",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1x2DwAECj_QquDUoBCGfS4VUKa4vHQ27i/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1-dnbdrsmdPd77Z5quKPyOAFh-BQ7yjMR",
+      "fileId": "1-dnbdrsmdPd77Z5quKPyOAFh-BQ7yjMR",
+      "fileName": "[27이감] 3-2 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1-dnbdrsmdPd77Z5quKPyOAFh-BQ7yjMR/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1g-CFu85OVpFmNiXKNEk7dfKi9My7J7K8",
+      "fileId": "1g-CFu85OVpFmNiXKNEk7dfKi9My7J7K8",
+      "fileName": "[27이감] 3-1 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1g-CFu85OVpFmNiXKNEk7dfKi9My7J7K8/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1WuFxhnVK3lwOiKJZZVrBcybY61feSSfj",
+      "fileId": "1WuFxhnVK3lwOiKJZZVrBcybY61feSSfj",
+      "fileName": "[27이감] 3-4 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1WuFxhnVK3lwOiKJZZVrBcybY61feSSfj/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1QHb4bOFq0T24t5_BARJu3vkYdpfzyV0U",
+      "fileId": "1QHb4bOFq0T24t5_BARJu3vkYdpfzyV0U",
+      "fileName": "[27이감] 4-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1QHb4bOFq0T24t5_BARJu3vkYdpfzyV0U/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1_m9VFmvSW7wWXTJXvnei4mOdlZWi6V0I",
+      "fileId": "1_m9VFmvSW7wWXTJXvnei4mOdlZWi6V0I",
+      "fileName": "[27이감] 4-1 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1_m9VFmvSW7wWXTJXvnei4mOdlZWi6V0I/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1viZxqig0RR5BebV--3aEH379jul06NKQ",
+      "fileId": "1viZxqig0RR5BebV--3aEH379jul06NKQ",
+      "fileName": "[27이감] 3-4",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1viZxqig0RR5BebV--3aEH379jul06NKQ/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1p8P_diujy8NyDQvPnqlIFPji-Ind1LQn",
+      "fileId": "1p8P_diujy8NyDQvPnqlIFPji-Ind1LQn",
+      "fileName": "[27이감] 3-2",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1p8P_diujy8NyDQvPnqlIFPji-Ind1LQn/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1aNw4m0XA3zWkVNF-28glkS2QsEYNjfIr",
+      "fileId": "1aNw4m0XA3zWkVNF-28glkS2QsEYNjfIr",
+      "fileName": "[27이감] 3-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1aNw4m0XA3zWkVNF-28glkS2QsEYNjfIr/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1D4vXA-MQU5HcRMdPjOfUlVGUzkew1QG3",
+      "fileId": "1D4vXA-MQU5HcRMdPjOfUlVGUzkew1QG3",
+      "fileName": "[27이감] 2-2 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1D4vXA-MQU5HcRMdPjOfUlVGUzkew1QG3/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1aQHEAZW6f-YXGwc9H9YlKghfQC5Mv4K_",
+      "fileId": "1aQHEAZW6f-YXGwc9H9YlKghfQC5Mv4K_",
+      "fileName": "[27이감] 2-1(2차) 정답표",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1aQHEAZW6f-YXGwc9H9YlKghfQC5Mv4K_/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1tGrHJztP44r5kPHf418pCqJqZ70aUmHQ",
+      "fileId": "1tGrHJztP44r5kPHf418pCqJqZ70aUmHQ",
+      "fileName": "[27이감] 2-1(2차)",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1tGrHJztP44r5kPHf418pCqJqZ70aUmHQ/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1ZvdWzMOyPTv1juiCZpbby5SvA_GrMbAq",
+      "fileId": "1ZvdWzMOyPTv1juiCZpbby5SvA_GrMbAq",
+      "fileName": "[27이감] 2-2",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1ZvdWzMOyPTv1juiCZpbby5SvA_GrMbAq/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1nvbylcrKoAAA0iufuu_PhKb5oxlRUfAB",
+      "fileId": "1nvbylcrKoAAA0iufuu_PhKb5oxlRUfAB",
+      "fileName": "[27기타] 강은양 시대북스 무료배포 1회 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1nvbylcrKoAAA0iufuu_PhKb5oxlRUfAB/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_192uPIGzvqW0mEGPBVcGh53s-7fe241V1",
+      "fileId": "192uPIGzvqW0mEGPBVcGh53s-7fe241V1",
+      "fileName": "[26민철] 파이널 3회",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/192uPIGzvqW0mEGPBVcGh53s-7fe241V1/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_14YhU_gkzY4UJ4IdiYwT1aNXS6nQXwkPY",
+      "fileId": "14YhU_gkzY4UJ4IdiYwT1aNXS6nQXwkPY",
+      "fileName": "[27기타] 강은양 시대북스 무료배포 1회",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/14YhU_gkzY4UJ4IdiYwT1aNXS6nQXwkPY/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_11up6QkMXTmwdCKojZF8s039y6FXsn1Qa",
+      "fileId": "11up6QkMXTmwdCKojZF8s039y6FXsn1Qa",
+      "fileName": "[27이감] 1-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/11up6QkMXTmwdCKojZF8s039y6FXsn1Qa/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1PDd1aHddF7S-bP8PPBdOqfKuT0ZbESW5",
+      "fileId": "1PDd1aHddF7S-bP8PPBdOqfKuT0ZbESW5",
+      "fileName": "[26민철] 파이널 2회 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1PDd1aHddF7S-bP8PPBdOqfKuT0ZbESW5/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1TE5_lcj9LTkZlSQAyqdygl6RUGxhrvr-",
+      "fileId": "1TE5_lcj9LTkZlSQAyqdygl6RUGxhrvr-",
+      "fileName": "[26민철] 파이널 1회 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1TE5_lcj9LTkZlSQAyqdygl6RUGxhrvr-/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1BhuoO7e4IWF2aGkuaruZoCsS3VP5JIpi",
+      "fileId": "1BhuoO7e4IWF2aGkuaruZoCsS3VP5JIpi",
+      "fileName": "[26민철] 파이널 1회",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1BhuoO7e4IWF2aGkuaruZoCsS3VP5JIpi/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1hB8yJE6gOXxBS_KdF7Xxe7MUSxSRXPAB",
+      "fileId": "1hB8yJE6gOXxBS_KdF7Xxe7MUSxSRXPAB",
+      "fileName": "[26이감] 5-2 ",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1hB8yJE6gOXxBS_KdF7Xxe7MUSxSRXPAB/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1fz7QpVLUzdKVrZPkcYIWLuFAvHLpUf8e",
+      "fileId": "1fz7QpVLUzdKVrZPkcYIWLuFAvHLpUf8e",
+      "fileName": "[26민철] 파이널 2회",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1fz7QpVLUzdKVrZPkcYIWLuFAvHLpUf8e/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1ZIg-abSyYcfNiNsJ3e1GwE-iQkacNgGU",
+      "fileId": "1ZIg-abSyYcfNiNsJ3e1GwE-iQkacNgGU",
+      "fileName": "[26이감] 5-2 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1ZIg-abSyYcfNiNsJ3e1GwE-iQkacNgGU/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1KB9LFatl5ssRSyCl2vbhC1Ted-dlmeVW",
+      "fileId": "1KB9LFatl5ssRSyCl2vbhC1Ted-dlmeVW",
+      "fileName": "[26이감] 5-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1KB9LFatl5ssRSyCl2vbhC1Ted-dlmeVW/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1hYOeWpm8rhjiv3H4EJDfn1qHI8gmRZVI",
+      "fileId": "1hYOeWpm8rhjiv3H4EJDfn1qHI8gmRZVI",
+      "fileName": "[26이감] 5-1 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1hYOeWpm8rhjiv3H4EJDfn1qHI8gmRZVI/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1-R__OT5QL2WmYTlq2iuXFuVvUknQgIVl",
+      "fileId": "1-R__OT5QL2WmYTlq2iuXFuVvUknQgIVl",
+      "fileName": "[26이감] 3-4 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1-R__OT5QL2WmYTlq2iuXFuVvUknQgIVl/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_199wvotyAoJ-XKKjb9CPs9UDZf43zRQgD",
+      "fileId": "199wvotyAoJ-XKKjb9CPs9UDZf43zRQgD",
+      "fileName": "[26이감] 3-4",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/199wvotyAoJ-XKKjb9CPs9UDZf43zRQgD/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1sD7RGvByiU49DaoKoAdNTVu1SDCL2P50",
+      "fileId": "1sD7RGvByiU49DaoKoAdNTVu1SDCL2P50",
+      "fileName": "[26이감] 3-3",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1sD7RGvByiU49DaoKoAdNTVu1SDCL2P50/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1mzxURvTeph7b0aHtHJqANBhDbBDY0wHn",
+      "fileId": "1mzxURvTeph7b0aHtHJqANBhDbBDY0wHn",
+      "fileName": "[26이감] 3-3 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1mzxURvTeph7b0aHtHJqANBhDbBDY0wHn/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1AktkhTimQFYKVxelAiK6qydWGrpsdy2q",
+      "fileId": "1AktkhTimQFYKVxelAiK6qydWGrpsdy2q",
+      "fileName": "[26이감] 3-2 ",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1AktkhTimQFYKVxelAiK6qydWGrpsdy2q/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1MA6Xu0Mt8pFzhr4lbyZ7643D2s56wwfN",
+      "fileId": "1MA6Xu0Mt8pFzhr4lbyZ7643D2s56wwfN",
+      "fileName": "[26이감] 3-2 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1MA6Xu0Mt8pFzhr4lbyZ7643D2s56wwfN/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1P2rCN8YqKZa6YOueKhvxq77RJmDmyBZx",
+      "fileId": "1P2rCN8YqKZa6YOueKhvxq77RJmDmyBZx",
+      "fileName": "[26이감] 3-1 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1P2rCN8YqKZa6YOueKhvxq77RJmDmyBZx/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1yGJVIiMW-RWUyHAwPAro7iVStw1-E2sK",
+      "fileId": "1yGJVIiMW-RWUyHAwPAro7iVStw1-E2sK",
+      "fileName": "[26이감] 3-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1yGJVIiMW-RWUyHAwPAro7iVStw1-E2sK/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1fcP1Eq2EyhRMk9shQF1QlJUSebIUcE7B",
+      "fileId": "1fcP1Eq2EyhRMk9shQF1QlJUSebIUcE7B",
+      "fileName": "[26이감] 2-2",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1fcP1Eq2EyhRMk9shQF1QlJUSebIUcE7B/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1zRGhUJvRWMnrbs9A4buCWfzOWVmtohle",
+      "fileId": "1zRGhUJvRWMnrbs9A4buCWfzOWVmtohle",
+      "fileName": "[26이감] 2-2 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1zRGhUJvRWMnrbs9A4buCWfzOWVmtohle/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1P3l3mriXRLdqIDJ1QqT1oM_rixPqfXfL",
+      "fileId": "1P3l3mriXRLdqIDJ1QqT1oM_rixPqfXfL",
+      "fileName": "[26이감] 2-1 해설",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1P3l3mriXRLdqIDJ1QqT1oM_rixPqfXfL/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_11TquoN1vQ9Wq5p7NsuujFYzVMQkczYz2",
+      "fileId": "11TquoN1vQ9Wq5p7NsuujFYzVMQkczYz2",
+      "fileName": "[26이감] 2-1",
+      "folderPath": "2027수능대비 사설실모/1-국어",
+      "type": "modified",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/11TquoN1vQ9Wq5p7NsuujFYzVMQkczYz2/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1IbvJQPTEavdBJstpDvsWKctQQ8d-hKUA",
+      "fileId": "1IbvJQPTEavdBJstpDvsWKctQQ8d-hKUA",
+      "fileName": "2027 수능특강 아랍어 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1IbvJQPTEavdBJstpDvsWKctQQ8d-hKUA/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_16fR4B3JffYdhJoOuP09xegG8SFJTZjJT",
+      "fileId": "16fR4B3JffYdhJoOuP09xegG8SFJTZjJT",
+      "fileName": "2027 수능특강 프랑스어 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/16fR4B3JffYdhJoOuP09xegG8SFJTZjJT/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1_ThUwEr_8a4JgrS4klvT_xYKqS0a72mh",
+      "fileId": "1_ThUwEr_8a4JgrS4klvT_xYKqS0a72mh",
+      "fileName": "2027 수능특강 중국어 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1_ThUwEr_8a4JgrS4klvT_xYKqS0a72mh/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1XqqGnhSNaNLlZr7FickAkshKowjw5OKg",
+      "fileId": "1XqqGnhSNaNLlZr7FickAkshKowjw5OKg",
+      "fileName": "2027학년도_수특_한국사.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1XqqGnhSNaNLlZr7FickAkshKowjw5OKg/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1mCCSziQPsNCyaPnQK0FJ2N3gHsDFX9gl",
+      "fileId": "1mCCSziQPsNCyaPnQK0FJ2N3gHsDFX9gl",
+      "fileName": "EBS_2027_수능특강_한국사영역_한국사_정답과해설.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1mCCSziQPsNCyaPnQK0FJ2N3gHsDFX9gl/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1cLfFEf3ggegBpOpi1dGLGb7nuzWkYhvv",
+      "fileId": "1cLfFEf3ggegBpOpi1dGLGb7nuzWkYhvv",
+      "fileName": "2027 수능특강 지구과학 II 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1cLfFEf3ggegBpOpi1dGLGb7nuzWkYhvv/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1uXVKkOW9HiPBfPrpACbtAWuiVIdp9bkq",
+      "fileId": "1uXVKkOW9HiPBfPrpACbtAWuiVIdp9bkq",
+      "fileName": "2027 수능특강 지구과학 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1uXVKkOW9HiPBfPrpACbtAWuiVIdp9bkq/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1EmHCFP4f_WG1MA-z4Ga3mfsevD6cT2Zp",
+      "fileId": "1EmHCFP4f_WG1MA-z4Ga3mfsevD6cT2Zp",
+      "fileName": "2027 수능특강 생명과학 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1EmHCFP4f_WG1MA-z4Ga3mfsevD6cT2Zp/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1VNrnJK-FE7byj9zyBxbKpWkc3kufIsp6",
+      "fileId": "1VNrnJK-FE7byj9zyBxbKpWkc3kufIsp6",
+      "fileName": "2027 수능특강 화학 I 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1VNrnJK-FE7byj9zyBxbKpWkc3kufIsp6/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1LeGQTdnEi3wgh3zskF9rh-KQqhYVJjVa",
+      "fileId": "1LeGQTdnEi3wgh3zskF9rh-KQqhYVJjVa",
+      "fileName": "2027 수능특강 화학 II 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1LeGQTdnEi3wgh3zskF9rh-KQqhYVJjVa/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_15JWyUAb4IzSmND-h8ZA8nnSVxiQexY72",
+      "fileId": "15JWyUAb4IzSmND-h8ZA8nnSVxiQexY72",
+      "fileName": "2027 수능특강 물리학 II 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/15JWyUAb4IzSmND-h8ZA8nnSVxiQexY72/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1HRUpwFHkqbicuYSsuVmdFc_04lV1On9C",
+      "fileId": "1HRUpwFHkqbicuYSsuVmdFc_04lV1On9C",
+      "fileName": "2027 수능특강 영어 듣기 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1HRUpwFHkqbicuYSsuVmdFc_04lV1On9C/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1PYLmk5PGoTQnSQvV0-lfPDKqFyDcEPQs",
+      "fileId": "1PYLmk5PGoTQnSQvV0-lfPDKqFyDcEPQs",
+      "fileName": "2027 수능특강 확률과 통계 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1PYLmk5PGoTQnSQvV0-lfPDKqFyDcEPQs/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1i5DkSTxQd5caFFs8C7wluIFaSrKv5VmC",
+      "fileId": "1i5DkSTxQd5caFFs8C7wluIFaSrKv5VmC",
+      "fileName": "2027 수능특강 미적분 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1i5DkSTxQd5caFFs8C7wluIFaSrKv5VmC/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1a9AD80Vkss-7udmZKYVtU6ZuN_sUfVcX",
+      "fileId": "1a9AD80Vkss-7udmZKYVtU6ZuN_sUfVcX",
+      "fileName": "2027 수능특강 언어와 매체 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1a9AD80Vkss-7udmZKYVtU6ZuN_sUfVcX/view?usp=drivesdk"
+    },
+    {
+      "id": "upd_1781983578624_1BITNMKF1rjoHFCvyUkb85B1uUioRvwXR",
+      "fileId": "1BITNMKF1rjoHFCvyUkb85B1uUioRvwXR",
+      "fileName": "2027 수능특강 화법과 작문 원본.pdf",
+      "folderPath": "각종 교재/연계교재(수특 / 수완)",
+      "type": "new",
+      "detectedAt": "2026-06-20T19:26:18.623Z",
+      "webViewLink": "https://drive.google.com/file/d/1BITNMKF1rjoHFCvyUkb85B1uUioRvwXR/view?usp=drivesdk"
+    },
     {
       "id": "upd_1781959860553_1NfEM8ksEK8hp3WqvMkQDkNUBBAWT5eDH",
       "fileId": "1NfEM8ksEK8hp3WqvMkQDkNUBBAWT5eDH",
