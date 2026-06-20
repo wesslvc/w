@@ -128,14 +128,10 @@ export default function FilePreviewModal({ file, onClose }: Props) {
     if (!fileId) return;
 
     if (isPdf) {
-      // PDF iframe is same-origin (via proxy) → contentWindow.print() works directly
-      try {
-        pdfIframeRef.current?.contentWindow?.print();
-      } catch {
-        window.open(`/api/file/${fileId}`, "_blank");
-      }
+      // Open PDF in new tab — browser's native PDF viewer has a reliable print button
+      // contentWindow.print() is unreliable for sandboxed PDF viewers across browsers
+      window.open(`/api/file/${fileId}`, "_blank");
     } else {
-      // Google Workspace / Office files → open their native print URL
       window.open(getPrintUrl(fileId, file.mimeType), "_blank");
     }
   }
