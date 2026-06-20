@@ -39,10 +39,10 @@ export default function SearchBar({
   return (
     <form onSubmit={handleSubmit} className="w-full">
       <div
-        className={`flex items-center gap-2 bg-white border-2 border-gray-200 rounded-xl shadow-sm focus-within:border-blue-500 transition-colors ${large ? "px-5 py-4" : "px-4 py-2.5"}`}
+        className={`flex items-center gap-2 bg-white dark:bg-gray-900 border-2 border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm focus-within:border-blue-500 dark:focus-within:border-blue-500 transition-colors ${large ? "px-5 py-4" : "px-4 py-2.5"}`}
       >
         <svg
-          className={`text-gray-400 flex-shrink-0 ${large ? "w-6 h-6" : "w-5 h-5"}`}
+          className={`text-gray-400 dark:text-gray-600 flex-shrink-0 ${large ? "w-6 h-6" : "w-5 h-5"}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -60,19 +60,19 @@ export default function SearchBar({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="파일명 또는 내용으로 검색…"
-          className={`flex-1 outline-none bg-transparent text-gray-800 placeholder-gray-400 ${large ? "text-lg" : "text-sm"}`}
+          className={`flex-1 outline-none bg-transparent text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-600 ${large ? "text-lg" : "text-sm"}`}
         />
         <button
           type="submit"
-          className={`bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors flex-shrink-0 ${large ? "px-5 py-2 text-base" : "px-4 py-1.5 text-sm"}`}
+          className={`bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-xl transition-colors flex-shrink-0 ${large ? "px-5 py-2 text-base" : "px-4 py-1.5 text-sm"}`}
         >
           검색
         </button>
       </div>
 
       {/* Search mode toggle */}
-      <div className="mt-2 flex items-center gap-4 text-sm">
-        <label className="flex items-center gap-1.5 cursor-pointer text-gray-600">
+      <div className="mt-2.5 flex items-center gap-5 text-sm pl-1">
+        <label className="flex items-center gap-1.5 cursor-pointer text-gray-600 dark:text-gray-400">
           <input
             type="radio"
             name="mode"
@@ -81,9 +81,10 @@ export default function SearchBar({
             onChange={() => setMode("filename")}
             className="accent-blue-600"
           />
-          파일명 검색 <span className="text-gray-400">(빠름)</span>
+          파일명 검색
+          <span className="text-gray-400 dark:text-gray-600 text-xs">(빠름)</span>
         </label>
-        <label className="flex items-center gap-1.5 cursor-pointer text-gray-600">
+        <label className="flex items-center gap-1.5 cursor-pointer text-gray-600 dark:text-gray-400">
           <input
             type="radio"
             name="mode"
@@ -95,15 +96,11 @@ export default function SearchBar({
           본문 검색
         </label>
         {mode === "fulltext" && (
-          <span className="text-amber-600 text-xs flex items-center gap-1">
+          <span className="text-amber-600 dark:text-amber-500 text-xs flex items-center gap-1">
             <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
-                clipRule="evenodd"
-              />
+              <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
             </svg>
-            본문 검색은 처리 시간이 다소 걸릴 수 있습니다
+            처리 시간이 다소 걸릴 수 있습니다
           </span>
         )}
       </div>
