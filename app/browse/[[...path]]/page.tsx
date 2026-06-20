@@ -3,8 +3,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import FileCard from "@/components/FileCard";
+import SortSelect from "@/components/SortSelect";
 import { isAfter, subDays, parseISO } from "date-fns";
 import type { DriveIndex } from "@/lib/types";
+import { sortFiles, parseSortKey } from "@/lib/sort";
 
 function FolderSkeleton() {
   return (
@@ -25,6 +27,7 @@ export default function BrowsePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const currentPath = searchParams.get("path") ?? "";
+  const sort = parseSortKey(searchParams.get("sort"));
 
   const [index, setIndex] = useState<DriveIndex | null>(null);
 
@@ -41,8 +44,11 @@ export default function BrowsePage() {
   const { filesHere, subFolders, topFolders } = useMemo(() => {
     if (!index) return { filesHere: [], subFolders: [], topFolders: [] };
 
-    const filesHere = index.files.filter((f) =>
-      currentPath ? f.folderPath === currentPath : f.folderPath === ""
+    const filesHere = sortFiles(
+      index.files.filter((f) =>
+        currentPath ? f.folderPath === currentPath : f.folderPath === ""
+      ),
+      sort
     );
 
     const subFolders = Array.from(
@@ -69,7 +75,7 @@ export default function BrowsePage() {
     ).sort();
 
     return { filesHere, subFolders, topFolders };
-  }, [index, currentPath]);
+  }, [index, currentPath, sort]);
 
   const breadcrumbs = currentPath
     ? currentPath.split("/").map((seg, i, arr) => ({
@@ -198,16 +204,24 @@ export default function BrowsePage() {
 
               {/* Files */}
               {filesHere.length > 0 ? (
-                <ul className="space-y-2.5">
-                  {filesHere.map((file) => (
-                    <li key={file.id}>
-                      <FileCard
-                        file={file}
-                        isNew={isAfter(parseISO(file.modifiedTime), twoWeeksAgo)}
-                      />
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-gray-400 dark:text-gray-600 tabular-nums">
+                      파일 {filesHere.length}개
+                    </p>
+                    <SortSelect value={sort} />
+                  </div>
+                  <ul className="space-y-2.5">
+                    {filesHere.map((file) => (
+                      <li key={file.id}>
+                        <FileCard
+                          file={file}
+                          isNew={isAfter(parseISO(file.modifiedTime), twoWeeksAgo)}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </>
               ) : displayFolders.length === 0 ? (
                 <p className="text-gray-400 dark:text-gray-600 text-sm py-10 text-center">
                   이 폴더에 파일이 없습니다.

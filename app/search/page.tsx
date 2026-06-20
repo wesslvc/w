@@ -3,7 +3,9 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import FileCard from "@/components/FileCard";
 import SearchBar from "@/components/SearchBar";
+import SortSelect from "@/components/SortSelect";
 import { searchFiles } from "@/lib/search";
+import { sortFiles, parseSortKey } from "@/lib/sort";
 import { isAfter, subDays, parseISO } from "date-fns";
 import type { DriveIndex } from "@/lib/types";
 import { Suspense } from "react";
@@ -21,6 +23,7 @@ function SearchPageInner() {
   const query = searchParams.get("q") ?? "";
   const mode = (searchParams.get("mode") ?? "filename") as "filename" | "fulltext";
   const typeFilter = searchParams.get("type") ?? undefined;
+  const sort = parseSortKey(searchParams.get("sort"));
 
   const [index, setIndex] = useState<DriveIndex | null>(null);
   const fetchedRef = useRef(false);
@@ -40,13 +43,11 @@ function SearchPageInner() {
     if (!index) return { results: [], allTypes: [] };
     const allTypes = Array.from(new Set(index.files.map((f) => f.mimeType)));
     if (!query) return { results: [], allTypes };
-    const results = searchFiles(index.files, {
-      query,
-      mode,
-      mimeTypeFilter: typeFilter,
-    });
+    const raw = searchFiles(index.files, { query, mode, mimeTypeFilter: typeFilter });
+    const sorted = sortFiles(raw.map((r) => r.file), sort);
+    const results = sorted.map((f) => raw.find((r) => r.file.id === f.id)!);
     return { results, allTypes };
-  }, [index, query, mode, typeFilter]);
+  }, [index, query, mode, typeFilter, sort]);
 
   return (
     <div>
@@ -104,17 +105,20 @@ function SearchPageInner() {
             </div>
           ) : query ? (
             <>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">
-                <span className="font-medium text-gray-900 dark:text-gray-100">
-                  &ldquo;{query}&rdquo;
-                </span>{" "}
-                검색 결과 <strong>{results.length}</strong>건
-                {mode === "fulltext" && (
-                  <span className="ml-2 text-xs text-amber-600 dark:text-amber-500">
-                    본문 검색
-                  </span>
-                )}
-              </p>
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-gray-500 dark:text-gray-500">
+                  <span className="font-medium text-gray-900 dark:text-gray-100">
+                    &ldquo;{query}&rdquo;
+                  </span>{" "}
+                  검색 결과 <strong>{results.length}</strong>건
+                  {mode === "fulltext" && (
+                    <span className="ml-2 text-xs text-amber-600 dark:text-amber-500">
+                      본문 검색
+                    </span>
+                  )}
+                </p>
+                {results.length > 0 && <SortSelect value={sort} />}
+              </div>
 
               {results.length === 0 ? (
                 <div className="text-center py-20 text-gray-400 dark:text-gray-600">
