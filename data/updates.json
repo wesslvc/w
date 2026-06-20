@@ -1,0 +1,59 @@
+{
+  "lastCheckedAt": "2026-06-20T06:00:00.000Z",
+  "updates": [
+    {
+      "id": "upd_001",
+      "fileId": "sample_012",
+      "fileName": "협약서_OO재단_2026.pdf",
+      "folderPath": "자료실/계약·협약",
+      "type": "new",
+      "detectedAt": "2026-06-19T15:00:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_012/view"
+    },
+    {
+      "id": "upd_002",
+      "fileId": "sample_010",
+      "fileName": "홍보물_여름캠프_2026.pdf",
+      "folderPath": "자료실/홍보",
+      "type": "modified",
+      "detectedAt": "2026-06-19T10:00:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_010/view"
+    },
+    {
+      "id": "upd_003",
+      "fileId": "sample_009",
+      "fileName": "자원봉사 활동 통계.pdf",
+      "folderPath": "자료실/통계/봉사",
+      "type": "modified",
+      "detectedAt": "2026-06-18T11:00:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_009/view"
+    },
+    {
+      "id": "upd_004",
+      "fileId": "sample_003",
+      "fileName": "회의록_2026-06-10_운영위원회.pdf",
+      "folderPath": "자료실/회의록/2026",
+      "type": "new",
+      "detectedAt": "2026-06-11T09:00:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_003/view"
+    },
+    {
+      "id": "upd_005",
+      "fileId": "sample_001",
+      "fileName": "2026년 상반기 사업계획서.pdf",
+      "folderPath": "자료실/2026",
+      "type": "modified",
+      "detectedAt": "2026-06-15T14:30:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_001/view"
+    },
+    {
+      "id": "upd_006",
+      "fileId": "sample_006",
+      "fileName": "예산집행현황_2026_Q1.xlsx",
+      "folderPath": "자료실/재정/2026",
+      "type": "new",
+      "detectedAt": "2026-04-10T14:00:00.000Z",
+      "webViewLink": "https://drive.google.com/file/d/sample_006/view"
+    }
+  ]
+}

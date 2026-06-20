@@ -1,0 +1,148 @@
+{
+  "syncedAt": "2026-06-20T06:00:00.000Z",
+  "totalFiles": 12,
+  "files": [
+    {
+      "id": "sample_001",
+      "name": "2026년 상반기 사업계획서.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_2026",
+      "folderPath": "자료실/2026",
+      "createdTime": "2026-06-01T09:00:00.000Z",
+      "modifiedTime": "2026-06-15T14:30:00.000Z",
+      "size": 2048000,
+      "webViewLink": "https://drive.google.com/file/d/sample_001/view",
+      "fullText": "본 사업계획서는 2026년 상반기 주요 사업 목표와 추진 전략을 담고 있습니다. 핵심 목표로는 디지털 전환 가속화, 서비스 품질 개선, 조직 역량 강화를 설정하였습니다."
+    },
+    {
+      "id": "sample_002",
+      "name": "정책연구 보고서 - 지역사회 활성화 방안.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_policy",
+      "folderPath": "자료실/정책자료/2025",
+      "createdTime": "2025-11-20T11:00:00.000Z",
+      "modifiedTime": "2025-12-01T16:00:00.000Z",
+      "size": 5120000,
+      "webViewLink": "https://drive.google.com/file/d/sample_002/view",
+      "fullText": "지역사회 활성화를 위한 정책 방안 연구. 주민 참여형 거버넌스 구축, 지역 경제 생태계 조성, 문화·복지 인프라 확충을 3대 핵심 과제로 제시합니다."
+    },
+    {
+      "id": "sample_003",
+      "name": "회의록_2026-06-10_운영위원회.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_minutes",
+      "folderPath": "자료실/회의록/2026",
+      "createdTime": "2026-06-10T18:00:00.000Z",
+      "modifiedTime": "2026-06-11T09:00:00.000Z",
+      "size": 512000,
+      "webViewLink": "https://drive.google.com/file/d/sample_003/view",
+      "fullText": "제15차 운영위원회 회의록. 참석자: 위원장 외 7명. 안건 1: 하반기 사업 방향 논의. 안건 2: 예산 집행 현황 보고."
+    },
+    {
+      "id": "sample_004",
+      "name": "2025 연간보고서.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_annual",
+      "folderPath": "자료실/보고서/연간",
+      "createdTime": "2026-01-15T10:00:00.000Z",
+      "modifiedTime": "2026-01-20T12:00:00.000Z",
+      "size": 8192000,
+      "webViewLink": "https://drive.google.com/file/d/sample_004/view",
+      "fullText": "2025년 연간 활동 보고서. 총 사업 건수 42건, 수혜자 수 15,420명, 예산 집행률 97.3%. 주요 성과 및 개선 과제를 정리하였습니다."
+    },
+    {
+      "id": "sample_005",
+      "name": "청년지원사업 신청서 양식.docx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "folderId": "folder_forms",
+      "folderPath": "자료실/서식/신청서",
+      "createdTime": "2025-03-01T09:00:00.000Z",
+      "modifiedTime": "2026-04-01T10:00:00.000Z",
+      "size": 102400,
+      "webViewLink": "https://drive.google.com/file/d/sample_005/view"
+    },
+    {
+      "id": "sample_006",
+      "name": "예산집행현황_2026_Q1.xlsx",
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "folderId": "folder_budget",
+      "folderPath": "자료실/재정/2026",
+      "createdTime": "2026-04-05T09:00:00.000Z",
+      "modifiedTime": "2026-04-10T14:00:00.000Z",
+      "size": 256000,
+      "webViewLink": "https://drive.google.com/file/d/sample_006/view"
+    },
+    {
+      "id": "sample_007",
+      "name": "지역복지 현황 분석 보고서.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_welfare",
+      "folderPath": "자료실/복지/분석",
+      "createdTime": "2025-09-15T11:00:00.000Z",
+      "modifiedTime": "2025-10-01T09:00:00.000Z",
+      "size": 3145728,
+      "webViewLink": "https://drive.google.com/file/d/sample_007/view",
+      "fullText": "지역 복지 서비스 이용 현황 및 욕구 분석. 노인 복지 서비스 이용률 78%, 장애인 지원 서비스 62%, 아동·청소년 프로그램 참여율 83%."
+    },
+    {
+      "id": "sample_008",
+      "name": "교육프로그램 운영지침 2026.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_edu",
+      "folderPath": "자료실/교육/운영지침",
+      "createdTime": "2026-02-01T10:00:00.000Z",
+      "modifiedTime": "2026-02-15T16:00:00.000Z",
+      "size": 1536000,
+      "webViewLink": "https://drive.google.com/file/d/sample_008/view",
+      "fullText": "2026년 교육 프로그램 운영 지침. 프로그램 개설 요건, 강사 자격 기준, 수강생 관리 방법, 평가 및 환류 절차를 안내합니다."
+    },
+    {
+      "id": "sample_009",
+      "name": "자원봉사 활동 통계.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_volunteer",
+      "folderPath": "자료실/통계/봉사",
+      "createdTime": "2026-05-30T09:00:00.000Z",
+      "modifiedTime": "2026-06-18T11:00:00.000Z",
+      "size": 2097152,
+      "webViewLink": "https://drive.google.com/file/d/sample_009/view",
+      "fullText": "2026년 1~5월 자원봉사 활동 통계. 등록 봉사자 수 3,840명, 총 활동 시간 52,160시간, 수혜 기관 수 126개소."
+    },
+    {
+      "id": "sample_010",
+      "name": "홍보물_여름캠프_2026.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_pr",
+      "folderPath": "자료실/홍보",
+      "createdTime": "2026-06-17T14:00:00.000Z",
+      "modifiedTime": "2026-06-19T10:00:00.000Z",
+      "size": 4194304,
+      "webViewLink": "https://drive.google.com/file/d/sample_010/view",
+      "fullText": "2026 여름캠프 참가자 모집. 대상: 초등학교 4~6학년. 기간: 2026년 7월 28일 ~ 8월 1일 (4박 5일). 모집 인원: 60명."
+    },
+    {
+      "id": "sample_011",
+      "name": "직원 역량강화 교육 계획서.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_hr",
+      "folderPath": "자료실/인사/교육",
+      "createdTime": "2026-01-10T09:00:00.000Z",
+      "modifiedTime": "2026-01-12T11:00:00.000Z",
+      "size": 768000,
+      "webViewLink": "https://drive.google.com/file/d/sample_011/view",
+      "fullText": "2026년 직원 역량강화 교육 계획. 신입직원 온보딩 교육, 전문성 심화과정, 리더십 교육, 안전교육 등 연간 교육 로드맵."
+    },
+    {
+      "id": "sample_012",
+      "name": "협약서_OO재단_2026.pdf",
+      "mimeType": "application/pdf",
+      "folderId": "folder_contracts",
+      "folderPath": "자료실/계약·협약",
+      "createdTime": "2026-06-19T15:00:00.000Z",
+      "modifiedTime": "2026-06-19T15:00:00.000Z",
+      "size": 614400,
+      "webViewLink": "https://drive.google.com/file/d/sample_012/view",
+      "fullText": "OO재단과의 사업 협력 협약서. 공동 사업 추진, 인적·물적 자원 공유, 성과 공유 방식 등 협력 조건을 명시합니다."
+    }
+  ]
+}
