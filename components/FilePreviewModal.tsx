@@ -2,6 +2,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
+import ZoomPanViewer from "./ZoomPanViewer";
 
 interface Props {
   file: DriveFile;
@@ -333,26 +334,28 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               </a>
             </div>
           ) : isPdf && pdfProxyUrl ? (
-            /* PDF → native browser viewer via same-origin proxy (any size, built-in Ctrl+F & print) */
-            <div className="relative w-full h-full min-h-[60vh]">
-              {pdfLoading && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600 bg-white dark:bg-gray-900">
-                  <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <span className="text-sm">PDF 불러오는 중…</span>
-                  <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
-                </div>
-              )}
-              <iframe
-                ref={pdfIframeRef}
-                src={pdfProxyUrl}
-                className="w-full h-full min-h-[60vh]"
-                onLoad={() => setPdfLoading(false)}
-                title={file.name}
-              />
-            </div>
+            /* PDF → native browser viewer via same-origin proxy, wrapped in zoom/pan controller */
+            <ZoomPanViewer>
+              <div className="relative w-full h-full min-h-[60vh]">
+                {pdfLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600 bg-white dark:bg-gray-900 z-10">
+                    <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    <span className="text-sm">PDF 불러오는 중…</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
+                  </div>
+                )}
+                <iframe
+                  ref={pdfIframeRef}
+                  src={pdfProxyUrl}
+                  className="w-full h-full min-h-[60vh]"
+                  onLoad={() => setPdfLoading(false)}
+                  title={file.name}
+                />
+              </div>
+            </ZoomPanViewer>
           ) : (
             /* Google Workspace / images → Drive iframe */
             <div className="relative w-full h-full min-h-[60vh]">
