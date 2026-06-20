@@ -8,9 +8,13 @@ export default function HomePage() {
   const index = loadIndex();
   const history = loadUpdates();
 
-  // Collect unique top-level folder names
+  // Collect unique top-level folder names (exclude root-level files with empty path)
   const topFolders = Array.from(
-    new Set(index.files.map((f) => f.folderPath.split("/")[0]))
+    new Set(
+      index.files
+        .map((f) => f.folderPath.split("/")[0])
+        .filter(Boolean)
+    )
   ).sort();
 
   return (
@@ -70,7 +74,7 @@ export default function HomePage() {
           <ul className="space-y-1.5">
             {topFolders.map((folder) => {
               const count = index.files.filter((f) =>
-                f.folderPath.startsWith(folder)
+                f.folderPath === folder || f.folderPath.startsWith(folder + "/")
               ).length;
               return (
                 <li key={folder}>

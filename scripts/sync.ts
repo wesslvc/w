@@ -15,6 +15,15 @@ import path from "path";
 import { listFilesRecursive } from "../lib/drive";
 import type { DriveFile, DriveIndex, UpdateHistory, UpdateLog } from "../lib/types";
 
+// Load .env.local for local development
+const envPath = path.join(process.cwd(), ".env.local");
+if (fs.existsSync(envPath)) {
+  for (const line of fs.readFileSync(envPath, "utf-8").split("\n")) {
+    const m = line.match(/^([^#=]+)=(.*)$/);
+    if (m) process.env[m[1].trim()] = m[2].trim();
+  }
+}
+
 const DATA_DIR = path.join(process.cwd(), "data");
 const INDEX_PATH = path.join(DATA_DIR, "index.json");
 const UPDATES_PATH = path.join(DATA_DIR, "updates.json");

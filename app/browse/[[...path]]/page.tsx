@@ -14,27 +14,30 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
   const index = loadIndex();
   const twoWeeksAgo = subDays(new Date(), 14);
 
-  // Files directly under currentPath
-  const filesHere = index.files.filter((f) => {
-    if (!currentPath) return f.folderPath.split("/").length === 1;
-    return f.folderPath === currentPath;
-  });
+  // Files directly under currentPath (root: folderPath === "")
+  const filesHere = index.files.filter((f) =>
+    currentPath ? f.folderPath === currentPath : f.folderPath === ""
+  );
 
-  // Subdirectories
+  // Subdirectories under currentPath
   const subFolders = Array.from(
     new Set(
       index.files
         .filter((f) => {
-          if (!currentPath) return f.folderPath.includes("/");
+          if (!currentPath) {
+            // Top-level: any file with a non-empty folderPath
+            return f.folderPath !== "";
+          }
           return (
             f.folderPath.startsWith(currentPath + "/") &&
-            f.folderPath.slice(currentPath.length + 1).includes("/") === false
+            !f.folderPath.slice(currentPath.length + 1).includes("/")
           );
         })
         .map((f) => {
           if (!currentPath) return f.folderPath.split("/")[0];
           return f.folderPath.slice(currentPath.length + 1).split("/")[0];
         })
+        .filter(Boolean)
     )
   ).sort();
 
@@ -105,7 +108,7 @@ export default async function BrowsePage({ searchParams }: BrowsePageProps) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {topFolders.map((folder) => {
                 const count = index.files.filter((f) =>
-                  f.folderPath.startsWith(folder)
+                  f.folderPath === folder || f.folderPath.startsWith(folder + "/")
                 ).length;
                 return (
                   <Link
