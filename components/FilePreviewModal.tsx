@@ -68,7 +68,6 @@ export default function FilePreviewModal({ file, onClose }: Props) {
   const [matchIdx, setMatchIdx] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
 
   const fileId = getFileId(file.webViewLink);
   const isPdf = PDF_TYPES.includes(file.mimeType);
@@ -343,13 +342,26 @@ export default function FilePreviewModal({ file, onClose }: Props) {
                     <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
                   </div>
                 )}
-                <iframe
-                  ref={pdfIframeRef}
-                  src={pdfProxyUrl}
+                <object
+                  data={pdfProxyUrl}
+                  type="application/pdf"
                   className="w-full h-full min-h-[60vh]"
                   onLoad={() => setPdfLoading(false)}
-                  title={file.name}
-                />
+                  aria-label={file.name}
+                >
+                  {/* Fallback for browsers that don't render PDFs inline (mobile Safari, etc.) */}
+                  <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400 dark:text-gray-500 py-16">
+                    <p className="text-sm">이 브라우저는 PDF 미리보기를 지원하지 않습니다.</p>
+                    <a
+                      href={pdfProxyUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                      새 탭에서 열기
+                    </a>
+                  </div>
+                </object>
               </div>
             </ZoomPanViewer>
           ) : (
