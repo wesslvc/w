@@ -1,12 +1,15 @@
 import { format, parseISO, isAfter, subDays } from "date-fns";
 import { ko } from "date-fns/locale";
 import { getCachedIndex, deriveUpdates } from "@/lib/fetchIndex";
+import UpdatePreviewItem from "@/components/UpdatePreviewItem";
 import type { UpdateLog } from "@/lib/types";
 
 export default async function UpdatesPage() {
   const index = await getCachedIndex();
   const history = deriveUpdates(index);
   const twoWeeksAgo = subDays(new Date(), 14);
+
+  const fileMap = new Map(index.files.map((f) => [f.id, f]));
 
   const grouped: Record<string, UpdateLog[]> = {};
   for (const u of history.updates) {
@@ -60,30 +63,11 @@ export default async function UpdatesPage() {
                   </div>
                   <ul className="space-y-2">
                     {grouped[day].map((item) => (
-                      <li
+                      <UpdatePreviewItem
                         key={item.id}
-                        className="flex items-start gap-3 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
-                      >
-                        <span className="flex-shrink-0 mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-400">
-                          신규
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <a
-                            href={item.webViewLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-sm text-gray-800 dark:text-gray-200 hover:text-blue-600 dark:hover:text-blue-400 truncate block transition-colors"
-                          >
-                            {item.fileName}
-                          </a>
-                          <p className="text-xs text-gray-400 dark:text-gray-600 truncate mt-0.5">
-                            {item.folderPath || "루트"}
-                          </p>
-                        </div>
-                        <time className="flex-shrink-0 text-xs text-gray-400 dark:text-gray-600 tabular-nums mt-0.5">
-                          {format(parseISO(item.detectedAt), "HH:mm")}
-                        </time>
-                      </li>
+                        item={item}
+                        file={fileMap.get(item.fileId) ?? null}
+                      />
                     ))}
                   </ul>
                 </div>
