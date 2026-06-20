@@ -126,7 +126,23 @@ export default function FilePreviewModal({ file, onClose }: Props) {
 
   function handlePrint() {
     if (!fileId) return;
-    window.open(getPrintUrl(fileId, file.mimeType), "_blank");
+
+    if (isPdf) {
+      // PDF is served from our same-origin proxy → iframe.contentWindow.print() works
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;";
+      iframe.src = `/api/file/${fileId}`;
+      document.body.appendChild(iframe);
+      iframe.onload = () => {
+        try {
+          iframe.contentWindow?.print();
+        } catch {}
+        setTimeout(() => document.body.removeChild(iframe), 60_000);
+      };
+    } else {
+      // Google Workspace / Office files → open their native print URL
+      window.open(getPrintUrl(fileId, file.mimeType), "_blank");
+    }
   }
 
   const currentSnippet =

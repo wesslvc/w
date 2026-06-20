@@ -53,7 +53,7 @@ export default async function HomePage() {
               전체 보기 →
             </Link>
           </div>
-          <UpdateFeed updates={history.updates} limit={6} />
+          <UpdateFeed updates={history.updates} files={index.files} limit={6} />
         </section>
 
         {/* Folder Quick Access */}

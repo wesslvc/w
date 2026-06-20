@@ -51,15 +51,15 @@ export default function BrowsePage() {
       sort
     );
 
+    // Include all files that are anywhere under currentPath — not just
+    // those exactly one level deep — so folders that only contain
+    // sub-subfolders (no direct files) are still shown.
     const subFolders = Array.from(
       new Set(
         index.files
           .filter((f) => {
             if (!currentPath) return f.folderPath !== "";
-            return (
-              f.folderPath.startsWith(currentPath + "/") &&
-              !f.folderPath.slice(currentPath.length + 1).includes("/")
-            );
+            return f.folderPath.startsWith(currentPath + "/");
           })
           .map((f) =>
             !currentPath
