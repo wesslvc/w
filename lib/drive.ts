@@ -46,7 +46,8 @@ export async function listAllFiles(
   return results;
 }
 
-// Recursively list all files under a folder tree
+// Recursively list all files — fetches all subfolders in parallel to stay
+// well within Vercel's function timeout even for large folder trees.
 export async function listFilesRecursive(
   rootFolderId: string,
   apiKey: string,
@@ -61,12 +62,21 @@ export async function listFilesRecursive(
     (f) => f.mimeType !== "application/vnd.google-apps.folder"
   );
 
-  const result = files.map((f) => ({ file: f, folderPath }));
+  const result: { file: DriveApiFile; folderPath: string }[] = files.map((f) => ({
+    file: f,
+    folderPath,
+  }));
 
-  for (const folder of folders) {
-    const subPath = folderPath ? `${folderPath}/${folder.name}` : folder.name;
-    const subFiles = await listFilesRecursive(folder.id, apiKey, subPath);
-    result.push(...subFiles);
+  // Fetch all subfolders in parallel instead of sequentially
+  const subResults = await Promise.all(
+    folders.map((folder) => {
+      const subPath = folderPath ? `${folderPath}/${folder.name}` : folder.name;
+      return listFilesRecursive(folder.id, apiKey, subPath);
+    })
+  );
+
+  for (const sub of subResults) {
+    result.push(...sub);
   }
 
   return result;

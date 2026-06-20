@@ -1,10 +1,7 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
-import dynamic from "next/dynamic";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
-
-const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 interface Props {
   file: DriveFile;
@@ -65,10 +62,12 @@ function HighlightedSnippet({ text, query }: { text: string; query: string }) {
 
 export default function FilePreviewModal({ file, onClose }: Props) {
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [pdfLoading, setPdfLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchIdx, setMatchIdx] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
 
   const fileId = getFileId(file.webViewLink);
   const isPdf = PDF_TYPES.includes(file.mimeType);
@@ -128,17 +127,12 @@ export default function FilePreviewModal({ file, onClose }: Props) {
     if (!fileId) return;
 
     if (isPdf) {
-      // PDF is served from our same-origin proxy → iframe.contentWindow.print() works
-      const iframe = document.createElement("iframe");
-      iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;";
-      iframe.src = `/api/file/${fileId}`;
-      document.body.appendChild(iframe);
-      iframe.onload = () => {
-        try {
-          iframe.contentWindow?.print();
-        } catch {}
-        setTimeout(() => document.body.removeChild(iframe), 60_000);
-      };
+      // PDF iframe is same-origin (via proxy) → contentWindow.print() works directly
+      try {
+        pdfIframeRef.current?.contentWindow?.print();
+      } catch {
+        window.open(`/api/file/${fileId}`, "_blank");
+      }
     } else {
       // Google Workspace / Office files → open their native print URL
       window.open(getPrintUrl(fileId, file.mimeType), "_blank");
@@ -216,8 +210,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Mobile search toggle (only for non-PDF iframe previews with fullText) */}
-            {canPreview && !isPdf && hasFullText && (
+            {/* Mobile search toggle */}
+            {canPreview && (
               <button
                 onClick={() => setMobileSearchOpen((v) => !v)}
                 aria-label="문서 내 검색"
@@ -281,13 +275,13 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
         </div>
 
-        {/* Search bar — only for non-PDF iframe previews with fullText */}
-        {canPreview && !isPdf && (
+        {/* Search bar — PDF gets Ctrl+F hint; other previews get fullText search or hint */}
+        {canPreview && (
           <>
             {/* Mobile toggle panel */}
             {mobileSearchOpen && (
               <div className="sm:hidden px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
-                {hasFullText ? fullTextSearchBar : (
+                {!isPdf && hasFullText ? fullTextSearchBar : (
                   <p className="text-xs text-gray-400 dark:text-gray-500">
                     미리보기 클릭 후{" "}
                     <kbd className="px-1 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs font-mono">Ctrl+F</kbd>{" "}
@@ -298,7 +292,7 @@ export default function FilePreviewModal({ file, onClose }: Props) {
             )}
             {/* Desktop always-visible strip */}
             <div className="hidden sm:block px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
-              {hasFullText ? fullTextSearchBar : (
+              {!isPdf && hasFullText ? fullTextSearchBar : (
                 <p className="text-xs text-gray-400 dark:text-gray-500">
                   <svg className="inline w-3.5 h-3.5 mr-1 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -339,9 +333,25 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               </a>
             </div>
           ) : isPdf && pdfProxyUrl ? (
-            /* PDF → self-hosted PDF.js viewer */
-            <div className="h-full min-h-[60vh]">
-              <PdfViewer url={pdfProxyUrl} />
+            /* PDF → native browser viewer via same-origin proxy (any size, built-in Ctrl+F & print) */
+            <div className="relative w-full h-full min-h-[60vh]">
+              {pdfLoading && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600 bg-white dark:bg-gray-900">
+                  <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm">PDF 불러오는 중…</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
+                </div>
+              )}
+              <iframe
+                ref={pdfIframeRef}
+                src={pdfProxyUrl}
+                className="w-full h-full min-h-[60vh]"
+                onLoad={() => setPdfLoading(false)}
+                title={file.name}
+              />
             </div>
           ) : (
             /* Google Workspace / images → Drive iframe */
