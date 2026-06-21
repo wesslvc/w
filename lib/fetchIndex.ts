@@ -1,8 +1,7 @@
-import { unstable_cache } from "next/cache";
 import { listFilesRecursive } from "./drive";
 import type { DriveIndex, DriveFile, UpdateHistory } from "./types";
 
-async function fetchDriveIndex(): Promise<DriveIndex> {
+export async function fetchDriveIndex(): Promise<DriveIndex> {
   const apiKey = process.env.GOOGLE_API_KEY;
   const folderId = process.env.DRIVE_FOLDER_ID;
 
@@ -32,10 +31,8 @@ async function fetchDriveIndex(): Promise<DriveIndex> {
   return { syncedAt: now, totalFiles: files.length, files };
 }
 
-// Cache for 5 minutes — reduces Drive API traversal frequency
-export const getCachedIndex = unstable_cache(fetchDriveIndex, ["drive-index"], {
-  revalidate: 300,
-});
+// Alias for backward compatibility with the API route import
+export const getCachedIndex = fetchDriveIndex;
 
 // Updates feed: derived from createdTime (newest files first, no separate log needed)
 export function deriveUpdates(index: DriveIndex): UpdateHistory {
