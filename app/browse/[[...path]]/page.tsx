@@ -26,7 +26,7 @@ function FolderSkeleton() {
 export default function BrowsePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const currentPath = searchParams.get("path") ?? "";
+  const currentPath = (searchParams.get("path") ?? "").normalize("NFC");
   const sort = parseSortKey(searchParams.get("sort"));
 
   const [index, setIndex] = useState<DriveIndex | null>(null);
