@@ -15,10 +15,13 @@ async function fetchDriveIndex(): Promise<DriveIndex> {
 
   const files: DriveFile[] = rawFiles.map(({ file, folderPath }) => ({
     id: file.id,
-    name: file.name,
+    // Normalize Korean text to NFC. macOS/Drive can store names as NFD, which
+    // looks identical but compares unequal — that made some files appear in
+    // search yet vanish from their folder (folderPath !== currentPath).
+    name: file.name.normalize("NFC"),
     mimeType: file.mimeType,
     folderId: file.parents?.[0] ?? "",
-    folderPath,
+    folderPath: folderPath.normalize("NFC"),
     createdTime: file.createdTime ?? now,
     modifiedTime: file.modifiedTime ?? now,
     size: file.size ? parseInt(file.size) : undefined,

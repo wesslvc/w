@@ -1,300 +1,357 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { PDFDocumentProxy, PDFPageProxy, RenderTask } from "pdfjs-dist";
-
-let pdfLibCache: typeof import("pdfjs-dist") | null = null;
-async function loadPdfLib() {
-  if (pdfLibCache) return pdfLibCache;
-  const lib = await import("pdfjs-dist");
-  // Serve worker locally — avoids CDN failures and CORS issues
-  lib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  pdfLibCache = lib;
-  return lib;
-}
-
-interface SearchMatch {
-  page: number;
-  snippet: string;
-}
+import "pdfjs-dist/web/pdf_viewer.css";
 
 interface Props {
   url: string;
 }
 
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 5;
+
 export default function PdfViewer({ url }: Props) {
-  const [numPages, setNumPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(1.4);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewerElRef = useRef<HTMLDivElement>(null);
+
+  const pdfjsRef = useRef<any>(null);
+  const pdfViewerRef = useRef<any>(null);
+  const eventBusRef = useRef<any>(null);
+  const docRef = useRef<any>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageInput, setPageInput] = useState("1");
-
-  const [pendingQuery, setPendingQuery] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [matches, setMatches] = useState<SearchMatch[]>([]);
-  const [matchIdx, setMatchIdx] = useState(0);
+  const [scalePct, setScalePct] = useState(100);
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<{ current: number; total: number }>({ current: 0, total: 0 });
   const [searching, setSearching] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pdfRef = useRef<PDFDocumentProxy | null>(null);
-  const renderTaskRef = useRef<RenderTask | null>(null);
-
-  // Load PDF
+  // ---- Initialize Mozilla's PDFViewer component ----
   useEffect(() => {
     let cancelled = false;
+    let loadingTask: any = null;
     setLoading(true);
     setError(null);
-    pdfRef.current = null;
+    setMatches({ current: 0, total: 0 });
 
-    loadPdfLib()
-      .then((lib) =>
-        lib.getDocument({
+    (async () => {
+      try {
+        const [pdfjsLib, viewerMod] = await Promise.all([
+          import("pdfjs-dist"),
+          import("pdfjs-dist/web/pdf_viewer.mjs"),
+        ]);
+        // Worker served locally (avoids CDN/CORS failures)
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+        pdfjsRef.current = pdfjsLib;
+
+        if (cancelled || !containerRef.current || !viewerElRef.current) return;
+
+        const { EventBus, PDFViewer, PDFFindController, PDFLinkService } = viewerMod as any;
+
+        const eventBus = new EventBus();
+        const linkService = new PDFLinkService({ eventBus });
+        const findController = new PDFFindController({ eventBus, linkService });
+
+        const pdfViewer = new PDFViewer({
+          container: containerRef.current,
+          viewer: viewerElRef.current,
+          eventBus,
+          linkService,
+          findController,
+          textLayerMode: 2, // enable text layer (needed for search highlight + selection)
+        });
+        linkService.setViewer(pdfViewer);
+
+        eventBusRef.current = eventBus;
+        pdfViewerRef.current = pdfViewer;
+
+        eventBus.on("pagesinit", () => {
+          // Fit page to width on first load
+          pdfViewer.currentScaleValue = "page-width";
+          setScalePct(Math.round(pdfViewer.currentScale * 100));
+          setLoading(false);
+        });
+
+        const onMatches = (e: any) => {
+          const c = e?.matchesCount;
+          if (c) setMatches({ current: c.current ?? 0, total: c.total ?? 0 });
+          else setMatches({ current: 0, total: 0 });
+          setSearching(false);
+        };
+        eventBus.on("updatefindmatchescount", onMatches);
+        eventBus.on("updatefindcontrolstate", onMatches);
+
+        loadingTask = pdfjsLib.getDocument({
           url,
           cMapUrl: "/cmaps/",
           cMapPacked: true,
-        }).promise
-      )
-      .then((doc) => {
+        });
+        const doc = await loadingTask.promise;
         if (cancelled) return;
-        pdfRef.current = doc;
-        setNumPages(doc.numPages);
-        setLoading(false);
-      })
-      .catch((err) => {
+        docRef.current = doc;
+        pdfViewer.setDocument(doc);
+        linkService.setDocument(doc, null);
+      } catch (err: any) {
         if (cancelled) return;
-        console.error("[PdfViewer] load error:", err);
-        setError(`PDF 로드 실패: ${err?.message ?? String(err)}`);
+        console.error("[PdfViewer] error:", err);
+        setError(`PDF를 불러오지 못했습니다: ${err?.message ?? String(err)}`);
         setLoading(false);
-      });
+      }
+    })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      try { loadingTask?.destroy?.(); } catch {}
+      try { docRef.current?.destroy?.(); } catch {}
+      docRef.current = null;
+      pdfViewerRef.current = null;
+      eventBusRef.current = null;
+    };
   }, [url]);
 
-  // Render page
-  const renderPage = useCallback(async (pageNum: number, pageScale: number) => {
-    const doc = pdfRef.current;
-    if (!doc || !canvasRef.current) return;
-
-    if (renderTaskRef.current) {
-      try { renderTaskRef.current.cancel(); } catch {}
-      renderTaskRef.current = null;
-    }
-
-    let page: PDFPageProxy;
-    try { page = await doc.getPage(pageNum); }
-    catch { return; }
-
-    const viewport = page.getViewport({ scale: pageScale });
-    const canvas = canvasRef.current;
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    const task = page.render({ canvas, viewport });
-    renderTaskRef.current = task;
-    try { await task.promise; }
-    catch (e: unknown) {
-      if ((e as { name?: string })?.name === "RenderingCancelledException") return;
-      console.error("[PdfViewer] render error:", e);
-    }
+  // ---- Zoom ----
+  const applyScale = useCallback((next: number) => {
+    const v = pdfViewerRef.current;
+    if (!v) return;
+    const clamped = Math.max(MIN_SCALE, Math.min(MAX_SCALE, next));
+    v.currentScaleValue = String(clamped);
+    setScalePct(Math.round(v.currentScale * 100));
   }, []);
 
+  const zoomIn = useCallback(() => {
+    const v = pdfViewerRef.current;
+    if (v) applyScale(v.currentScale * 1.15);
+  }, [applyScale]);
+  const zoomOut = useCallback(() => {
+    const v = pdfViewerRef.current;
+    if (v) applyScale(v.currentScale / 1.15);
+  }, [applyScale]);
+  const fitWidth = useCallback(() => {
+    const v = pdfViewerRef.current;
+    if (!v) return;
+    v.currentScaleValue = "page-width";
+    setScalePct(Math.round(v.currentScale * 100));
+  }, []);
+
+  // Ctrl/Cmd + wheel zoom on desktop
   useEffect(() => {
-    if (!loading && !error) {
-      renderPage(currentPage, scale);
-      setPageInput(String(currentPage));
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const v = pdfViewerRef.current;
+      if (!v) return;
+      applyScale(v.currentScale * (e.deltaY < 0 ? 1.1 : 1 / 1.1));
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [applyScale]);
+
+  // Pinch-to-zoom on mobile
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    let startDist = 0;
+    let startScale = 1;
+    const dist = (t: TouchList) =>
+      Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        startDist = dist(e.touches);
+        startScale = pdfViewerRef.current?.currentScale ?? 1;
+      }
+    };
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length === 2 && startDist > 0) {
+        e.preventDefault();
+        applyScale(startScale * (dist(e.touches) / startDist));
+      }
+    };
+    const onEnd = () => { startDist = 0; };
+    el.addEventListener("touchstart", onStart, { passive: false });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+    };
+  }, [applyScale]);
+
+  // ---- Search (highlights matches on the page via PDFFindController) ----
+  const runFind = useCallback((again: boolean, findPrevious: boolean) => {
+    const bus = eventBusRef.current;
+    if (!bus) return;
+    const q = query.trim();
+    if (!q) {
+      bus.dispatch("findbarclose", { source: null });
+      setMatches({ current: 0, total: 0 });
+      return;
     }
-  }, [loading, error, currentPage, scale, renderPage]);
-
-  // Navigate to match page when matchIdx changes
-  useEffect(() => {
-    if (matches.length > 0) setCurrentPage(matches[matchIdx].page);
-  }, [matchIdx, matches]);
-
-  // Text search through all pages
-  const handleSearch = useCallback(async () => {
-    const doc = pdfRef.current;
-    const q = pendingQuery.trim();
-    if (!doc || !q) { setMatches([]); setSearchQuery(""); return; }
-
     setSearching(true);
-    setSearchQuery(q);
-    const found: SearchMatch[] = [];
-    const lower = q.toLowerCase();
+    bus.dispatch("find", {
+      type: again ? "again" : "",
+      query: q,
+      caseSensitive: false,
+      entireWord: false,
+      highlightAll: true,
+      findPrevious,
+    });
+  }, [query]);
 
-    for (let i = 1; i <= doc.numPages; i++) {
-      try {
+  const onSearchSubmit = useCallback(() => runFind(false, false), [runFind]);
+  const findNext = useCallback(() => runFind(true, false), [runFind]);
+  const findPrev = useCallback(() => runFind(true, true), [runFind]);
+
+  // ---- Print: render every page to canvas, print without downloading ----
+  const handlePrint = useCallback(async () => {
+    const doc = docRef.current;
+    if (!doc || printing) return;
+    setPrinting(true);
+    const container = document.createElement("div");
+    container.id = "pdfjs-print-container";
+    try {
+      const PRINT_SCALE = 2; // ~150–200 DPI for crisp print
+      for (let i = 1; i <= doc.numPages; i++) {
         const page = await doc.getPage(i);
-        const content = await page.getTextContent();
-        const text = content.items
-          .map((item) => ("str" in item ? item.str : ""))
-          .join(" ");
-        if (text.toLowerCase().includes(lower)) {
-          const idx = text.toLowerCase().indexOf(lower);
-          const start = Math.max(0, idx - 50);
-          const end = Math.min(text.length, idx + lower.length + 50);
-          found.push({
-            page: i,
-            snippet:
-              (start > 0 ? "…" : "") +
-              text.slice(start, end) +
-              (end < text.length ? "…" : ""),
-          });
-        }
-      } catch {}
+        const viewport = page.getViewport({ scale: PRINT_SCALE });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+        await page.render({ canvas, viewport, intent: "print" } as any).promise;
+        const wrap = document.createElement("div");
+        wrap.className = "pdfjs-print-page";
+        canvas.style.width = "100%";
+        canvas.style.display = "block";
+        wrap.appendChild(canvas);
+        container.appendChild(wrap);
+      }
+      document.body.appendChild(container);
+      const cleanup = () => {
+        if (container.parentNode) container.remove();
+        setPrinting(false);
+        window.removeEventListener("afterprint", cleanup);
+      };
+      window.addEventListener("afterprint", cleanup);
+      window.print();
+      // Safety cleanup if afterprint never fires
+      setTimeout(() => { if (document.body.contains(container)) cleanup(); }, 120_000);
+    } catch (e) {
+      console.error("[PdfViewer] print error:", e);
+      if (container.parentNode) container.remove();
+      setPrinting(false);
     }
-
-    setMatches(found);
-    setMatchIdx(0);
-    if (found.length > 0) setCurrentPage(found[0].page);
-    setSearching(false);
-  }, [pendingQuery]);
-
-  function goTo(page: number) {
-    setCurrentPage(Math.max(1, Math.min(numPages, page)));
-  }
+  }, [printing]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-800 text-white">
+    <div className="flex flex-col h-full bg-gray-100 dark:bg-gray-800">
       {/* Toolbar */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 flex-shrink-0 flex-wrap gap-y-1.5">
-        {/* Page navigation */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => goTo(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+      <div className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 flex-shrink-0 flex-wrap gap-y-1.5">
+        {/* Search */}
+        <div className="flex items-center gap-1.5 flex-1 min-w-[180px]">
+          <div className="relative flex-1 min-w-0">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
-          </button>
-          <input
-            type="number"
-            value={pageInput}
-            onChange={(e) => setPageInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") goTo(parseInt(pageInput) || 1); }}
-            onBlur={() => goTo(parseInt(pageInput) || 1)}
-            className="w-10 text-center text-xs bg-gray-700 rounded px-1 py-1 outline-none focus:ring-1 ring-blue-500"
-          />
-          <span className="text-xs text-gray-400">/ {numPages}</span>
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (e.shiftKey) findPrev();
+                  else if (matches.total > 0) findNext();
+                  else onSearchSubmit();
+                }
+              }}
+              placeholder="문서 내 검색…"
+              className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-blue-400 dark:focus:border-blue-500 text-gray-800 dark:text-gray-200 placeholder-gray-400"
+            />
+          </div>
           <button
-            onClick={() => goTo(currentPage + 1)}
-            disabled={currentPage >= numPages}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 disabled:opacity-30 transition-colors"
+            onClick={onSearchSubmit}
+            className="px-2.5 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors whitespace-nowrap"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            {searching ? "검색…" : "검색"}
           </button>
+          {query.trim() && (
+            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums">
+              {matches.total > 0 ? `${matches.current}/${matches.total}` : "0"}
+            </span>
+          )}
+          {matches.total > 0 && (
+            <div className="flex items-center gap-0.5">
+              <button onClick={findPrev} className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="이전">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+              </button>
+              <button onClick={findNext} className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" title="다음">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+              </button>
+            </div>
+          )}
         </div>
-
-        <div className="w-px h-4 bg-gray-700" />
 
         {/* Zoom */}
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => setScale((s) => Math.max(0.5, parseFloat((s - 0.2).toFixed(1))))}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-            </svg>
+          <button onClick={zoomOut} className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300" title="축소">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
           </button>
-          <span className="text-xs text-gray-400 w-10 text-center tabular-nums">
-            {Math.round(scale * 100)}%
-          </span>
-          <button
-            onClick={() => setScale((s) => Math.min(3.0, parseFloat((s + 0.2).toFixed(1))))}
-            className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-700 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
+          <button onClick={fitWidth} className="text-xs text-gray-500 dark:text-gray-400 w-12 text-center tabular-nums hover:text-blue-600 dark:hover:text-blue-400" title="너비 맞춤">
+            {scalePct}%
+          </button>
+          <button onClick={zoomIn} className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300" title="확대">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           </button>
         </div>
 
-        <div className="w-px h-4 bg-gray-700" />
+        <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
 
-        {/* Search */}
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <input
-            type="text"
-            value={pendingQuery}
-            onChange={(e) => setPendingQuery(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-            placeholder="문서 내 검색…"
-            className="flex-1 min-w-0 px-2 py-1 text-xs bg-gray-700 rounded outline-none focus:ring-1 ring-blue-500 placeholder-gray-500"
-          />
-          <button
-            onClick={handleSearch}
-            disabled={searching || !pendingQuery.trim()}
-            className="px-2.5 py-1 text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded transition-colors whitespace-nowrap"
-          >
-            {searching ? "검색 중…" : "검색"}
-          </button>
-          {matches.length > 0 && (
-            <>
-              <span className="text-xs text-gray-400 whitespace-nowrap tabular-nums">
-                {matchIdx + 1}/{matches.length}
-              </span>
-              <button
-                onClick={() => setMatchIdx((i) => (i - 1 + matches.length) % matches.length)}
-                className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-700"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setMatchIdx((i) => (i + 1) % matches.length)}
-                className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-700"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            </>
+        {/* Print */}
+        <button
+          onClick={handlePrint}
+          disabled={printing || loading || !!error}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300 disabled:opacity-40 transition-colors whitespace-nowrap"
+          title="인쇄 (다운로드 없이)"
+        >
+          {printing ? (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
           )}
-          {searchQuery && matches.length === 0 && !searching && (
-            <span className="text-xs text-gray-500 whitespace-nowrap">결과 없음</span>
-          )}
-        </div>
+          {printing ? "준비 중…" : "인쇄"}
+        </button>
       </div>
 
-      {/* Match snippet */}
-      {matches.length > 0 && matches[matchIdx] && (
-        <div className="px-4 py-1.5 bg-yellow-900/40 border-b border-yellow-700/30 text-xs text-yellow-200 flex-shrink-0 truncate">
-          <span className="text-yellow-400 font-medium mr-1.5">
-            p.{matches[matchIdx].page}
-          </span>
-          {matches[matchIdx].snippet}
-        </div>
-      )}
-
-      {/* Canvas area */}
-      <div className="flex-1 overflow-auto bg-gray-700 flex items-start justify-center p-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3 text-gray-400">
+      {/* Viewer surface */}
+      <div className="relative flex-1 min-h-0">
+        {loading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-800">
             <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
             <span className="text-sm">PDF 불러오는 중…</span>
-            <span className="text-xs text-gray-500">대용량 파일은 잠시 기다려주세요</span>
+            <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
           </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
+        )}
+        {error && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 bg-gray-100 dark:bg-gray-800">
             <svg className="w-10 h-10 text-red-400 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
-            <p className="text-sm text-red-300 text-center max-w-xs">{error}</p>
-            <p className="text-xs text-gray-500 text-center max-w-xs">
-              파일이 공개 공유되어 있는지, Vercel에 GOOGLE_API_KEY 환경변수가 설정됐는지 확인하세요.
-            </p>
+            <p className="text-sm text-red-500 dark:text-red-300 text-center max-w-xs">{error}</p>
           </div>
-        ) : (
-          <canvas ref={canvasRef} className="block shadow-2xl" />
         )}
+        {/* PDFViewer needs an absolutely-positioned scroll container */}
+        <div ref={containerRef} className="pdfViewerContainer absolute inset-0 overflow-auto">
+          <div ref={viewerElRef} className="pdfViewer" />
+        </div>
       </div>
     </div>
   );

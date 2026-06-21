@@ -34,3 +34,50 @@
     overflow: hidden;
   }
 }
+
+/* PDF.js viewer — center pages and give them a card look */
+.pdfViewerContainer {
+  background: #f3f4f6;
+}
+.dark .pdfViewerContainer {
+  background: #1f2937;
+}
+.pdfViewer .page {
+  margin: 12px auto;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* In-page search highlight (PDFFindController adds these classes) */
+.pdfViewer .textLayer .highlight {
+  background-color: rgba(255, 221, 0, 0.45);
+  border-radius: 2px;
+}
+.pdfViewer .textLayer .highlight.selected {
+  background-color: rgba(255, 140, 0, 0.6);
+}
+
+/* Print: show only the rendered pages, hide the app chrome */
+#pdfjs-print-container {
+  display: none;
+}
+@media print {
+  body > *:not(#pdfjs-print-container) {
+    display: none !important;
+  }
+  #pdfjs-print-container {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  #pdfjs-print-container .pdfjs-print-page {
+    page-break-after: always;
+    break-after: page;
+    width: 100%;
+  }
+  @page {
+    margin: 0;
+  }
+}
