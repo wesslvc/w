@@ -30,6 +30,7 @@ export default function BrowsePage() {
   const sort = parseSortKey(searchParams.get("sort"));
 
   const [index, setIndex] = useState<DriveIndex | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   // Fetch index once — subsequent folder navigations are instant (client-side filter)
   useEffect(() => {
@@ -41,9 +42,10 @@ export default function BrowsePage() {
 
   const twoWeeksAgo = subDays(new Date(), 14);
 
-  const { filesHere, subFolders, topFolders } = useMemo(() => {
-    if (!index) return { filesHere: [], subFolders: [], topFolders: [] };
+  const { filesHere, subFolders, topFolders, allFilesHere } = useMemo(() => {
+    if (!index) return { filesHere: [], subFolders: [], topFolders: [], allFilesHere: [] };
 
+    // Direct files only (exact path match)
     const filesHere = sortFiles(
       index.files.filter((f) =>
         currentPath ? f.folderPath === currentPath : f.folderPath === ""
@@ -74,7 +76,16 @@ export default function BrowsePage() {
       new Set(index.files.map((f) => f.folderPath.split("/")[0]).filter(Boolean))
     ).sort();
 
-    return { filesHere, subFolders, topFolders };
+    // All files under currentPath (including sub-subfolders) for "하위 포함" mode
+    const allFilesHere = sortFiles(
+      index.files.filter((f) => {
+        if (!currentPath) return true;
+        return f.folderPath === currentPath || f.folderPath.startsWith(currentPath + "/");
+      }),
+      sort
+    );
+
+    return { filesHere, subFolders, topFolders, allFilesHere };
   }, [index, currentPath, sort]);
 
   const breadcrumbs = currentPath
@@ -203,30 +214,62 @@ export default function BrowsePage() {
               )}
 
               {/* Files */}
-              {filesHere.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-gray-400 dark:text-gray-600 tabular-nums">
-                      파일 {filesHere.length}개
+              {(() => {
+                const displayFiles = showAll ? allFilesHere : filesHere;
+                const hasSubFiles = subFolders.length > 0 && allFilesHere.length > filesHere.length;
+                return displayFiles.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-400 dark:text-gray-600 tabular-nums">
+                          파일 {displayFiles.length}개{showAll && allFilesHere.length !== filesHere.length && " (하위 포함)"}
+                        </p>
+                        {hasSubFiles && (
+                          <button
+                            onClick={() => setShowAll((v) => !v)}
+                            className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                              showAll
+                                ? "bg-blue-600 border-blue-600 text-white"
+                                : "border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-600 dark:hover:text-blue-400"
+                            }`}
+                          >
+                            하위 폴더 포함
+                          </button>
+                        )}
+                      </div>
+                      <SortSelect value={sort} />
+                    </div>
+                    <ul className="space-y-2.5">
+                      {displayFiles.map((file) => (
+                        <li key={file.id}>
+                          <FileCard
+                            file={file}
+                            isNew={isAfter(parseISO(file.modifiedTime), twoWeeksAgo)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : displayFolders.length > 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-400 dark:text-gray-600 mb-2">
+                      이 폴더에 직접 있는 파일이 없습니다
                     </p>
-                    <SortSelect value={sort} />
+                    {allFilesHere.length > 0 && (
+                      <button
+                        onClick={() => setShowAll(true)}
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        하위 폴더 파일 {allFilesHere.length}개 모두 보기 →
+                      </button>
+                    )}
                   </div>
-                  <ul className="space-y-2.5">
-                    {filesHere.map((file) => (
-                      <li key={file.id}>
-                        <FileCard
-                          file={file}
-                          isNew={isAfter(parseISO(file.modifiedTime), twoWeeksAgo)}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : displayFolders.length === 0 ? (
-                <p className="text-gray-400 dark:text-gray-600 text-sm py-10 text-center">
-                  이 폴더에 파일이 없습니다.
-                </p>
-              ) : null}
+                ) : (
+                  <p className="text-gray-400 dark:text-gray-600 text-sm py-10 text-center">
+                    이 폴더에 파일이 없습니다.
+                  </p>
+                );
+              })()}
             </>
           )}
         </div>
