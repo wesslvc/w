@@ -67,16 +67,21 @@ export async function listFilesRecursive(
     folderPath,
   }));
 
-  // Fetch all subfolders in parallel instead of sequentially
-  const subResults = await Promise.all(
+  // Fetch all subfolders in parallel; use allSettled so one failure
+  // doesn't drop the entire tree — partial results are better than none.
+  const settled = await Promise.allSettled(
     folders.map((folder) => {
       const subPath = folderPath ? `${folderPath}/${folder.name}` : folder.name;
       return listFilesRecursive(folder.id, apiKey, subPath);
     })
   );
 
-  for (const sub of subResults) {
-    result.push(...sub);
+  for (const outcome of settled) {
+    if (outcome.status === "fulfilled") {
+      result.push(...outcome.value);
+    } else {
+      console.error("[drive] subfolder fetch failed:", outcome.reason);
+    }
   }
 
   return result;
