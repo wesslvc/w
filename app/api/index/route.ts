@@ -1,7 +1,9 @@
 import { getCachedIndex } from "@/lib/fetchIndex";
 import { NextResponse } from "next/server";
 
-export const revalidate = 60;
+// Edge runtime: no 10-second function timeout (Vercel hobby serverless limit)
+export const runtime = "edge";
+export const revalidate = 300;
 
 export async function GET() {
   const index = await getCachedIndex();

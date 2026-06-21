@@ -50,6 +50,9 @@ export async function GET(
       const v = res.headers.get(h);
       if (v) responseHeaders.set(h, v);
     }
+    // Force inline display — without this browsers treat the response as a
+    // download and show a save/open prompt inside the iframe instead of rendering
+    responseHeaders.set("Content-Disposition", "inline");
     responseHeaders.set("Accept-Ranges", "bytes");
     responseHeaders.set("Cache-Control", "public, max-age=3600");
     responseHeaders.set("Access-Control-Allow-Origin", "*");

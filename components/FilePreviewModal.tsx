@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
-import ZoomPanViewer from "./ZoomPanViewer";
+
+// PDF.js viewer is client-only and heavy — load on demand
+const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 interface Props {
   file: DriveFile;
@@ -63,12 +66,10 @@ function HighlightedSnippet({ text, query }: { text: string; query: string }) {
 
 export default function FilePreviewModal({ file, onClose }: Props) {
   const [iframeLoading, setIframeLoading] = useState(true);
-  const [pdfLoading, setPdfLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [matchIdx, setMatchIdx] = useState(0);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
 
   const fileId = getFileId(file.webViewLink);
   const isPdf = PDF_TYPES.includes(file.mimeType);
@@ -124,20 +125,11 @@ export default function FilePreviewModal({ file, onClose }: Props) {
     return () => { document.body.style.overflow = ""; };
   }, []);
 
+  // Print for non-PDF previews (Google Workspace / Office). PDFs print from
+  // inside the PdfViewer toolbar (renders pages to canvas, no download).
   function handlePrint() {
     if (!fileId) return;
-
-    if (isPdf) {
-      // PDF iframe is same-origin (via proxy) → contentWindow.print() works directly
-      try {
-        pdfIframeRef.current?.contentWindow?.print();
-      } catch {
-        window.open(`/api/file/${fileId}`, "_blank");
-      }
-    } else {
-      // Google Workspace / Office files → open their native print URL
-      window.open(getPrintUrl(fileId, file.mimeType), "_blank");
-    }
+    window.open(getPrintUrl(fileId, file.mimeType), "_blank");
   }
 
   const currentSnippet =
@@ -211,8 +203,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Mobile search toggle */}
-            {canPreview && (
+            {/* Mobile search toggle (non-PDF; PDF viewer has its own search) */}
+            {canPreview && !isPdf && (
               <button
                 onClick={() => setMobileSearchOpen((v) => !v)}
                 aria-label="문서 내 검색"
@@ -228,8 +220,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               </button>
             )}
 
-            {/* Print */}
-            {canPreview && fileId && (
+            {/* Print (non-PDF; PDF prints from inside the viewer toolbar) */}
+            {canPreview && !isPdf && fileId && (
               <button
                 onClick={handlePrint}
                 aria-label="인쇄"
@@ -276,8 +268,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
         </div>
 
-        {/* Search bar — PDF gets Ctrl+F hint; other previews get fullText search or hint */}
-        {canPreview && (
+        {/* Search bar — non-PDF previews only (PDF viewer has its own search) */}
+        {canPreview && !isPdf && (
           <>
             {/* Mobile toggle panel */}
             {mobileSearchOpen && (
@@ -334,28 +326,10 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               </a>
             </div>
           ) : isPdf && pdfProxyUrl ? (
-            /* PDF → native browser viewer via same-origin proxy, wrapped in zoom/pan controller */
-            <ZoomPanViewer>
-              <div className="relative w-full h-full min-h-[60vh]">
-                {pdfLoading && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gray-400 dark:text-gray-600 bg-white dark:bg-gray-900 z-10">
-                    <svg className="w-8 h-8 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    <span className="text-sm">PDF 불러오는 중…</span>
-                    <span className="text-xs text-gray-400 dark:text-gray-600">대용량 파일은 잠시 기다려주세요</span>
-                  </div>
-                )}
-                <iframe
-                  ref={pdfIframeRef}
-                  src={pdfProxyUrl}
-                  className="w-full h-full min-h-[60vh]"
-                  onLoad={() => setPdfLoading(false)}
-                  title={file.name}
-                />
-              </div>
-            </ZoomPanViewer>
+            /* PDF → self-hosted PDF.js viewer (search highlight, zoom/pinch, print without download) */
+            <div className="h-full min-h-[60vh]">
+              <PdfViewer url={pdfProxyUrl} />
+            </div>
           ) : (
             /* Google Workspace / images → Drive iframe */
             <div className="relative w-full h-full min-h-[60vh]">

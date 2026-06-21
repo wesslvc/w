@@ -1,6 +1,5 @@
 import { unstable_cache } from "next/cache";
 import { listFilesRecursive } from "./drive";
-import { loadIndex, loadUpdates } from "./data";
 import type { DriveIndex, DriveFile, UpdateHistory } from "./types";
 
 async function fetchDriveIndex(): Promise<DriveIndex> {
@@ -8,7 +7,7 @@ async function fetchDriveIndex(): Promise<DriveIndex> {
   const folderId = process.env.DRIVE_FOLDER_ID;
 
   if (!apiKey || !folderId) {
-    return loadIndex();
+    return { syncedAt: "", totalFiles: 0, files: [] };
   }
 
   const now = new Date().toISOString();
@@ -16,10 +15,13 @@ async function fetchDriveIndex(): Promise<DriveIndex> {
 
   const files: DriveFile[] = rawFiles.map(({ file, folderPath }) => ({
     id: file.id,
-    name: file.name,
+    // Normalize Korean text to NFC. macOS/Drive can store names as NFD, which
+    // looks identical but compares unequal — that made some files appear in
+    // search yet vanish from their folder (folderPath !== currentPath).
+    name: file.name.normalize("NFC"),
     mimeType: file.mimeType,
     folderId: file.parents?.[0] ?? "",
-    folderPath,
+    folderPath: folderPath.normalize("NFC"),
     createdTime: file.createdTime ?? now,
     modifiedTime: file.modifiedTime ?? now,
     size: file.size ? parseInt(file.size) : undefined,
@@ -30,9 +32,9 @@ async function fetchDriveIndex(): Promise<DriveIndex> {
   return { syncedAt: now, totalFiles: files.length, files };
 }
 
-// Cache refreshes every 60 seconds — no external DB needed
+// Cache for 5 minutes — reduces Drive API traversal frequency
 export const getCachedIndex = unstable_cache(fetchDriveIndex, ["drive-index"], {
-  revalidate: 60,
+  revalidate: 300,
 });
 
 // Updates feed: derived from createdTime (newest files first, no separate log needed)
@@ -59,5 +61,3 @@ export function deriveUpdates(index: DriveIndex): UpdateHistory {
   };
 }
 
-// Keep loadUpdates as fallback for local dev without env vars
-export { loadUpdates };
