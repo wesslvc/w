@@ -150,8 +150,14 @@ export default function FilePreviewModal({ file, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      {/* The PDF viewer fills its container and scrolls internally, so it needs a
+          definite height to size against. With only max-h the flex chain has no
+          resolvable height and the viewer's scroll area collapses to its padding.
+          Other preview types still size to their content. */}
       <div
-        className="relative w-full sm:max-w-5xl sm:max-h-[92vh] max-h-[95vh] flex flex-col bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
+        className={`relative w-full sm:max-w-5xl flex flex-col bg-white dark:bg-gray-900 sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden ${
+          isPdf ? "h-[95vh] sm:h-[92vh]" : "max-h-[95vh] sm:max-h-[92vh]"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
