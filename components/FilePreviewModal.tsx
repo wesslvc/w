@@ -1,7 +1,11 @@
 "use client";
 import { useEffect, useState, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
 import { getMimeLabel, formatFileSize } from "@/lib/search";
 import type { DriveFile } from "@/lib/types";
+
+// pdf.js is client-only and ~1MB — load it only when a PDF is actually opened
+const PdfViewer = dynamic(() => import("./PdfViewer"), { ssr: false });
 
 interface Props {
   file: DriveFile;
@@ -66,6 +70,10 @@ export default function FilePreviewModal({ file, onClose }: Props) {
 
   const fileId = getFileId(file.webViewLink);
   const canPreview = PREVIEWABLE.includes(file.mimeType) && !!fileId;
+  // PDFs get the in-app viewer (fast scroll, real search, print without download).
+  // Everything else still goes through Drive's iframe preview.
+  const isPdf = file.mimeType === "application/pdf" && !!fileId;
+  const pdfUrl = fileId ? `/api/file/${fileId}` : null;
   const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null;
   const downloadUrl = fileId
     ? `https://drive.google.com/uc?export=download&id=${fileId}`
@@ -156,8 +164,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0">
-            {/* Mobile search toggle */}
-            {file.fullText && (
+            {/* Mobile search toggle — PDFs search from inside the viewer toolbar */}
+            {file.fullText && !isPdf && (
               <button
                 onClick={() => setMobileSearchOpen((v) => !v)}
                 className={`sm:hidden w-8 h-8 flex items-center justify-center rounded-lg transition-colors ${
@@ -172,8 +180,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               </button>
             )}
 
-            {/* Print */}
-            {fileId && (
+            {/* Print — PDFs print from inside the viewer, without downloading */}
+            {fileId && !isPdf && (
               <button
                 onClick={() => window.open(getPrintUrl(fileId, file.mimeType), "_blank")}
                 className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 dark:text-gray-500 transition-colors"
@@ -221,8 +229,8 @@ export default function FilePreviewModal({ file, onClose }: Props) {
           </div>
         </div>
 
-        {/* Search bar */}
-        {file.fullText && (
+        {/* Search bar — PDFs use the viewer's own search, which highlights in-page */}
+        {file.fullText && !isPdf && (
           <>
             {mobileSearchOpen && (
               <div className="sm:hidden px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 flex-shrink-0 bg-gray-50 dark:bg-gray-950">
@@ -260,6 +268,10 @@ export default function FilePreviewModal({ file, onClose }: Props) {
               >
                 파일 다운로드
               </a>
+            </div>
+          ) : isPdf && pdfUrl ? (
+            <div className="w-full h-full min-h-[60vh]">
+              <PdfViewer url={pdfUrl} />
             </div>
           ) : (
             <div className="relative w-full h-full min-h-[60vh]">
