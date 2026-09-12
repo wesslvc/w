@@ -12,7 +12,7 @@ export default function Header() {
           href="/"
           className="font-bold text-base text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 tracking-tight"
         >
-          은성아카이브 자료찾기
+          아카이브 자료찾기
         </Link>
 
         {/* Desktop nav */}

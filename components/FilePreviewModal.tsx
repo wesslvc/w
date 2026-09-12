@@ -271,7 +271,7 @@ export default function FilePreviewModal({ file, onClose }: Props) {
             </div>
           ) : isPdf && pdfUrl ? (
             <div className="w-full h-full min-h-[60vh]">
-              <PdfViewer url={pdfUrl} />
+              <PdfViewer url={pdfUrl} size={file.size} />
             </div>
           ) : (
             <div className="relative w-full h-full min-h-[60vh]">

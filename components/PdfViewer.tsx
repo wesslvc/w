@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   url: string;
+  /** File size in bytes, when known. Decides the fetch strategy for big files. */
+  size?: number;
 }
+
+/** Above this size, fetch only the byte ranges needed rather than streaming the
+ *  whole document. Range-only costs extra round trips, so smaller files — which
+ *  is nearly all of them — still stream straight through. */
+const RANGE_ONLY_THRESHOLD = 20 * 1024 * 1024; // 20MB
 
 /** Intrinsic page size at scale 1 (CSS px). */
 interface PageMeta {
@@ -12,11 +19,13 @@ interface PageMeta {
   h: number;
 }
 
-/** Extracted text of one page plus the char range each text item covers. */
+/** Extracted text of one page plus the char range each text item covers.
+ *  Only the three fields highlighting needs are kept from each pdf.js text
+ *  item — retaining the full item objects cost ~185MB of heap on a 1200-page
+ *  document. */
 interface PageText {
-  text: string;
   lower: string;
-  spans: { start: number; end: number; item: any }[];
+  spans: { start: number; end: number; t: number[]; w: number; len: number }[];
 }
 
 interface Match {
@@ -30,6 +39,17 @@ const BUFFER = 1; // pages kept rendered beyond the viewport, each direction
 const MIN_SCALE = 0.25;
 const MAX_SCALE = 6;
 const MAX_DPR = 2; // cap retina cost — 3x costs 2.25x the pixels for no visible gain
+/** Search-index ceiling. ~6M chars is thousands of pages of text and keeps the
+ *  index well under ~100MB of heap; past it we stop indexing rather than risk
+ *  an out-of-memory tab on a very large document. */
+const MAX_INDEX_CHARS = 6_000_000;
+/** Above this page count, sample sizes instead of measuring every page. */
+const SIZE_SAMPLE = 30;
+/** Documents up to this many pages are indexed as soon as they open, so search
+ *  is instant. Larger ones wait until the user actually searches — walking every
+ *  page to build an index would otherwise force the whole file to download,
+ *  which is exactly what we avoid with range requests. */
+const EAGER_INDEX_MAX_PAGES = 300;
 
 /** Highlight boxes for one page, in CSS px at the current scale. */
 function buildHighlights(
@@ -46,14 +66,13 @@ function buildHighlights(
       // Skip items that don't overlap the match at all
       if (span.end <= range.start || span.start >= range.end) continue;
 
-      const item = span.item;
-      const len = item.str.length;
+      const len = span.len;
       if (!len) continue;
 
       // Map the item's PDF-space transform into viewport (screen) space
-      const tx = Util.transform(viewport.transform, item.transform);
+      const tx = Util.transform(viewport.transform, span.t);
       const fontHeight = Math.hypot(tx[2], tx[3]);
-      const fullWidth = item.width * viewport.scale;
+      const fullWidth = span.w * viewport.scale;
 
       // Which slice of this item does the match cover?
       const from = Math.max(0, range.start - span.start);
@@ -205,7 +224,8 @@ function PdfPageView({
   );
 }
 
-export default function PdfViewer({ url }: Props) {
+export default function PdfViewer({ url, size }: Props) {
+  const rangeOnly = !!size && size > RANGE_ONLY_THRESHOLD;
   const scrollRef = useRef<HTMLDivElement>(null);
   const docRef = useRef<any>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -224,6 +244,8 @@ export default function PdfViewer({ url }: Props) {
 
   const [pageTexts, setPageTexts] = useState<(PageText | undefined)[]>([]);
   const [indexing, setIndexing] = useState(false);
+  const [indexedPages, setIndexedPages] = useState(0);
+  const [indexRequested, setIndexRequested] = useState(false);
   const [query, setQuery] = useState("");
   const [matchIdx, setMatchIdx] = useState(0);
   const [printing, setPrinting] = useState(false);
@@ -240,6 +262,8 @@ export default function PdfViewer({ url }: Props) {
     setMetas([]);
     setPageTexts([]);
     setQuery("");
+    setIndexedPages(0);
+    setIndexRequested(false);
 
     (async () => {
       // The *legacy* build is required, not just preferable: the modern build
@@ -254,6 +278,13 @@ export default function PdfViewer({ url }: Props) {
 
       task = lib.getDocument({
         url,
+        // Never prefetch the remainder of a document we haven't displayed.
+        disableAutoFetch: true,
+        // For a big file, refuse the whole-file stream too, so opening it costs
+        // the pages actually viewed rather than its full size. Our /api/file
+        // proxy forwards Range headers, which is what makes this work.
+        disableStream: rangeOnly,
+        rangeChunkSize: 262144, // 256KB
         // All fetched lazily, only when a document actually needs them:
         cMapUrl: "/cmaps/", // CJK encodings — required for many Korean PDFs
         cMapPacked: true,
@@ -272,14 +303,29 @@ export default function PdfViewer({ url }: Props) {
       }
       docRef.current = pdf;
 
-      // Measure every page up front (cheap — no rendering) so the scrollbar is
-      // correct immediately and scrolling never reflows.
+      // Measure pages up front (cheap — no rendering) so the scrollbar is
+      // correct immediately and scrolling never reflows. Nearly every document
+      // has uniform page sizes, so sample the first few and, if they agree,
+      // reuse that size instead of walking thousands of pages.
       const sizes: PageMeta[] = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
+      const sampleCount = Math.min(pdf.numPages, SIZE_SAMPLE);
+      for (let i = 1; i <= sampleCount; i++) {
         const p = await pdf.getPage(i);
         if (cancelled) return;
         const v = p.getViewport({ scale: 1 });
         sizes.push({ w: v.width, h: v.height });
+      }
+
+      const uniform = sizes.every((s) => s.w === sizes[0].w && s.h === sizes[0].h);
+      if (uniform) {
+        for (let i = sampleCount; i < pdf.numPages; i++) sizes.push({ ...sizes[0] });
+      } else {
+        for (let i = sampleCount + 1; i <= pdf.numPages; i++) {
+          const p = await pdf.getPage(i);
+          if (cancelled) return;
+          const v = p.getViewport({ scale: 1 });
+          sizes.push({ w: v.width, h: v.height });
+        }
       }
       if (cancelled) return;
 
@@ -308,17 +354,31 @@ export default function PdfViewer({ url }: Props) {
       }
       docRef.current = null;
     };
-  }, [url]);
+  }, [url, rangeOnly]);
 
   // ---------- Background full-text extraction (powers instant search) ----------
+  // Small documents index on open; large ones only once the user searches.
+  // A big file is excluded even when its page count is small: indexing walks
+  // every page, which pulls the whole document over the network.
+  const eagerOk = metas.length <= EAGER_INDEX_MAX_PAGES && !rangeOnly;
+  const shouldIndex = !!doc && metas.length > 0 && (eagerOk || indexRequested);
+
   useEffect(() => {
-    if (!doc || metas.length === 0) return;
+    if (!shouldIndex || !doc) return;
     let cancelled = false;
     setIndexing(true);
 
     (async () => {
+      let budget = MAX_INDEX_CHARS;
+
       for (let i = 1; i <= doc.numPages; i++) {
         if (cancelled) return;
+        if (budget <= 0) {
+          // Stop before a very large document exhausts the tab's memory.
+          // Search then covers the pages indexed so far, and the toolbar says so.
+          setIndexedPages(i - 1);
+          break;
+        }
         try {
           const page = await doc.getPage(i);
           const content = await page.getTextContent();
@@ -330,16 +390,29 @@ export default function PdfViewer({ url }: Props) {
             if (typeof item?.str !== "string") continue;
             // NFC-normalize per item so span offsets stay aligned with `text`
             const str = item.str.normalize("NFC");
-            spans.push({ start: text.length, end: text.length + str.length, item: { ...item, str } });
+            spans.push({
+              start: text.length,
+              end: text.length + str.length,
+              t: item.transform,
+              w: item.width,
+              len: str.length,
+            });
             text += str;
             if (item.hasEOL) text += "\n";
           }
+          budget -= text.length;
 
           setPageTexts((prev) => {
             const next = prev.slice();
-            next[i - 1] = { text, lower: text.toLowerCase(), spans };
+            // Only the lowercased copy is kept — the original is never read back
+            next[i - 1] = { lower: text.toLowerCase(), spans };
             return next;
           });
+          setIndexedPages(i);
+
+          // Release the page's parsed resources. Without this pdf.js keeps
+          // every page it has touched alive, which dominates heap on long docs.
+          if (i < range[0] || i > range[1]) page.cleanup();
         } catch {
           /* a page without extractable text just isn't searchable */
         }
@@ -352,7 +425,10 @@ export default function PdfViewer({ url }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [doc, metas.length]);
+    // `range` is deliberately excluded — it changes on every scroll and would
+    // restart indexing; it is only read to avoid cleaning up a visible page.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shouldIndex, doc]);
 
   // ---------- Layout ----------
   const layout = useMemo(() => {
@@ -579,6 +655,18 @@ export default function PdfViewer({ url }: Props) {
   const handlePrint = useCallback(async () => {
     const pdf = docRef.current;
     if (!pdf || printing) return;
+
+    // Printing renders every page into memory. On a very long document that
+    // takes minutes and can exhaust the tab, so make it a deliberate choice.
+    if (
+      pdf.numPages > 300 &&
+      !window.confirm(
+        `${pdf.numPages}페이지 전체를 인쇄용으로 변환합니다. 시간이 오래 걸리고 기기가 느려질 수 있어요. 계속할까요?`
+      )
+    ) {
+      return;
+    }
+
     setPrinting(true);
     setPrintProgress(0);
 
@@ -657,7 +745,11 @@ export default function PdfViewer({ url }: Props) {
               ref={searchRef}
               type="text"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                // A long document isn't indexed until it's actually searched
+                if (e.target.value.trim()) setIndexRequested(true);
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -670,8 +762,20 @@ export default function PdfViewer({ url }: Props) {
           </div>
 
           {query.trim() && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums">
+            <span
+              className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums"
+              title={
+                !indexing && indexedPages < metas.length
+                  ? `문서가 커서 앞 ${indexedPages}페이지까지만 검색됩니다`
+                  : undefined
+              }
+            >
               {matches.length > 0 ? `${matchIdx + 1}/${matches.length}` : indexing ? "색인 중…" : "0"}
+              {!indexing && indexedPages < metas.length && (
+                <span className="ml-1 text-amber-600 dark:text-amber-500">
+                  (앞 {indexedPages}p)
+                </span>
+              )}
             </span>
           )}
 
