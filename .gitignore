@@ -21,3 +21,6 @@ npm-debug.log*
 
 # Vercel
 .vercel
+
+# TypeScript incremental build cache
+*.tsbuildinfo

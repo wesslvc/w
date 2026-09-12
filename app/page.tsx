@@ -48,7 +48,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="text-center py-8">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2 tracking-tight">
-          은성아카이브 자료찾기
+          아카이브 자료찾기
         </h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base mb-8">
           구글드라이브에서 자료를 한 번에 검색하세요

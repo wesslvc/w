@@ -5,8 +5,8 @@ import BottomNav from "@/components/BottomNav";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
-  title: "은성아카이브 자료찾기",
-  description: "은성아카이브 자료 통합 검색 서비스",
+  title: "아카이브 자료찾기",
+  description: "아카이브 자료 통합 검색 서비스",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="hidden md:block border-t border-gray-200 dark:border-gray-800 mt-16 py-6 text-center text-sm text-gray-400 dark:text-gray-600">
-            은성아카이브 자료찾기
+            아카이브 자료찾기
           </footer>
           <BottomNav />
         </ThemeProvider>
